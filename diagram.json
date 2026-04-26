@@ -7,13 +7,14 @@
     { "type": "wokwi-led", "id": "led_green", "top": 0, "left": 48, "attrs": { "color": "green", "label": "ACESSO" } },
     { "type": "wokwi-led", "id": "led_red", "top": 0, "left": 112, "attrs": { "color": "red", "label": "NEGADO" } },
     { "type": "wokwi-led", "id": "led_yellow", "top": 0, "left": 176, "attrs": { "color": "yellow", "label": "STATUS" } },
-    { "type": "wokwi-buzzer", "id": "buzzer", "top": 2.4, "left": 251.4, "attrs": { "volume": "1000" } },
+    { "type": "wokwi-buzzer", "id": "buzzer", "top": 0, "left": 250, "attrs": { "volume": "1000" } },
     { "type": "wokwi-pushbutton", "id": "btn1", "top": 340, "left": 0, "attrs": { "color": "green", "label": "1" } },
     { "type": "wokwi-pushbutton", "id": "btn2", "top": 340, "left": 80, "attrs": { "color": "green", "label": "2" } },
     { "type": "wokwi-pushbutton", "id": "btn3", "top": 340, "left": 160, "attrs": { "color": "green", "label": "3" } },
-    { "type": "wokwi-pushbutton", "id": "btn4", "top": 340, "left": 240, "attrs": { "color": "red", "label": "4" } },
+    { "type": "wokwi-pushbutton", "id": "btn4", "top": 340, "left": 240, "attrs": { "color": "red", "label": "4 / SET" } },
+    { "type": "wokwi-pushbutton", "id": "btn5", "top": 340, "left": 320, "attrs": { "color": "orange", "label": "DEL" } },
     { "type": "wokwi-pir-motion-sensor", "id": "pir", "top": -120, "left": 0, "attrs": {} },
-    { "type": "wokwi-ssd1306", "id": "oled", "top": -130, "left": 200, "attrs": { "color": "white" } }
+    { "type": "board-ssd1306", "id": "oled", "top": -130, "left": 200, "attrs": { "color": "white" } }
   ],
   "connections": [
     [ "esp:D2", "led_green:A", "green", [] ],
@@ -32,6 +33,8 @@
     [ "btn3:2.l", "esp:GND.3", "black", [] ],
     [ "esp:D27", "btn4:1.l", "red", [] ],
     [ "btn4:2.l", "esp:GND.3", "black", [] ],
+    [ "esp:D26", "btn5:1.l", "orange", [] ],
+    [ "btn5:2.l", "esp:GND.3", "black", [] ],
     [ "esp:D15", "pir:OUT", "yellow", [ "h0" ] ],
     [ "pir:VCC", "esp:3V3", "red", [ "v0" ] ],
     [ "pir:GND", "esp:GND.1", "black", [ "v0" ] ],

@@ -1,146 +1,194 @@
 # Processo Seletivo – Intensivo Maker | IoT
-## Etapa Prática – Sistemas Embarcados
+## Etapa Prática – Sistemas Embarcados Avançados
 
-# 🔐 Sistema de Controle de Acesso com Teclado
+
+# 🔐 Cofre Inteligente IoT com Gestão de Energia e Memória
+
 
 ## 👤 Identificação do Candidato
+
 
 | Campo | Valor |
 |---|---|
 | **Nome completo** | _Jonathas Levi Pascoal Palmeira_ |
 | **GitHub** | _https://github.com/Aqu4tro_ |
 
+
 ---
+
 
 ## 1️⃣ Visão Geral da Solução
 
-Este projeto implementa um **sistema de controle de acesso por senha** simulado em hardware virtual (Raspberry Pi Pico via Wokwi).
 
-O sistema aguarda que o usuário pressione uma sequência de 4 botões. Se a sequência corresponder à senha cadastrada, o acesso é liberado (LED verde). Em caso de erro, o sistema permite novas tentativas até o limite máximo, momento em que um alarme é ativado.
+Este projeto implementa um **sistema de controle de acesso avançado** simulado em hardware virtual (ESP32 via Wokwi).
 
-**Interação do usuário:** pressionar os botões na ordem correta para liberar o acesso.
+
+O sistema evoluiu de um simples teclado de senhas para uma solução completa de IoT focada em eficiência. Ele aguarda em modo de baixo consumo (Standby) até detectar presença. Ao ser ativado, o usuário interage através de um Display OLED e insere a senha. Se correta, o acesso é liberado; em caso de múltiplas falhas, um alarme é disparado.
+
+
+**Diferencial:** A senha configurada pelo usuário é salva na memória Flash do microcontrolador, sobrevivendo a reinicializações (quedas de energia).
+
 
 ---
+
 
 ## 2️⃣ Arquitetura do Sistema Embarcado
 
-O sistema é baseado em uma **máquina de estados finitos (FSM)** não-bloqueante, executada em loop contínuo sem uso de `time.sleep()` bloqueante no fluxo principal.
+O sistema é governado por uma **Máquina de Estados Finitos (FSM)** puramente não-bloqueante. O loop principal roda continuamente sem uso de atrasos (`time.sleep()`), garantindo multitarefa cooperativa real e responsividade impecável da interface.
 
-### Diagrama de Estados
+### Diagrama de Estados (Renderizado via Mermaid)
 
+```mermaid
+stateDiagram-v2
+    [*] --> STANDBY
+    STANDBY --> IDLE : PIR Detecta Movimento
+    IDLE --> STANDBY : Timeout (15s inativo)
+    IDLE --> ENTERING : Botão 1-4 Pressionado
+    IDLE --> AUTH_CHANGE : Hold Botão 4 (3s)
+
+    ENTERING --> GRANTED : Senha Correta
+    ENTERING --> DENIED : Senha Errada (< 3x)
+    ENTERING --> IDLE : Cancelar (Botão 5 s/ dígitos)
+
+    DENIED --> IDLE : Timeout (2s)
+    ENTERING --> ALARM : 3º Erro Consecutivo
+    ALARM --> IDLE : Timeout Bloqueio (10s)
+    GRANTED --> IDLE : Timeout Sucesso (3s)
+
+    AUTH_CHANGE --> SET_PWD : Senha Antiga Correta
+    AUTH_CHANGE --> DENIED : Senha Antiga Errada
+    AUTH_CHANGE --> IDLE : Cancelar (Botão 5 s/ dígitos)
+
+    SET_PWD --> IDLE : Nova Senha Salva
+    SET_PWD --> IDLE : Cancelar (Botão 5 s/ dígitos)
 ```
-                    ┌─────────────────────────────────────────┐
-                    │                                         │
-                    ▼                                         │
-              ┌───────────┐    botão pressionado    ┌─────────────┐
-              │   IDLE    │ ──────────────────────► │  ENTERING   │
-              │ (aguarda) │                         │  (digitando)│
-              └───────────┘                         └─────────────┘
-                                                         │    │
-                                           senha correta │    │ senha errada
-                                                         │    │ (< 3 erros)
-                                                         ▼    ▼
-                                                   ┌─────────┐ ┌────────┐
-                                                   │ GRANTED │ │ DENIED │
-                                                   │(liberado│ │(negado)│
-                                                   └─────────┘ └────────┘
-                                                        │           │
-                                               3s depois│           │2s depois
-                                                        │           │
-                                                        ▼           ▼
-                                                      IDLE      ENTERING
-                                                                    │
-                                                       senha errada │ (3º erro)
-                                                                    ▼
-                                                              ┌─────────┐
-                                                              │  ALARM  │
-                                                              │(bloqueio│
-                                                              │ 10s)    │
-                                                              └─────────┘
-                                                                    │
-                                                          10s depois │
-                                                                    ▼
-                                                                  IDLE
-```
+
 
 ### Fluxo do `main.py`
+1. Inicializa pinos, barramento I2C, e tenta ler o `config.json` na memória.
+2. Entra no `while True` do loop principal.
+3. Lê o tempo atual (`time.ticks_ms()`) e verifica o sensor PIR e os botões (com debounce e detecção de *long press*).
+4. Executa o bloco do estado atual: atualiza o Display OLED, manipula os LEDs e o PWM do Buzzer.
+5. Chama a função `mudar_estado()` para resetar variáveis de controle na transição de estados.
 
-1. Inicializa pinos e variáveis de controle
-2. Entra no `while True` do loop principal
-3. A cada iteração, lê o tempo atual (`time.ticks_ms()`) e verifica botões (com debounce)
-4. Executa o bloco do estado atual: atualiza LEDs, verifica timeouts, trata entrada
-5. Quando necessário, chama `mudar_estado()` para transicionar
-
-### Temporização não-bloqueante
-
-Toda temporização usa comparação de `ticks_ms` em vez de `sleep`, garantindo que o loop nunca fique parado esperando tempo passar.
 
 ---
+
 
 ## 3️⃣ Componentes Utilizados na Simulação
 
-| Componente | Qtd | Pinos (Pico) | Função |
+
+```markdown
+| Componente | Qtd | Pinos (ESP32) | Função |
 |---|---|---|---|
-| Raspberry Pi Pico | 1 | — | Microcontrolador principal (MicroPython) |
-| LED Verde | 1 | GP0 | Indica acesso liberado |
-| LED Vermelho | 1 | GP1 | Indica senha errada / alarme ativo |
-| LED Amarelo | 1 | GP2 | Indica estado do sistema (aguardando / digitando) |
-| Buzzer | 1 | GP3 | Feedback sonoro (beep no botão, alarme contínuo) |
-| Botão 1 | 1 | GP14 | Dígito 1 da senha |
-| Botão 2 | 1 | GP15 | Dígito 2 da senha |
-| Botão 3 | 1 | GP16 | Dígito 3 da senha |
-| Botão 4 | 1 | GP17 | Dígito 4 da senha |
+| ESP32 DevKit V1 | 1 | — | Microcontrolador principal (MicroPython) |
+| Display OLED SSD1306 | 1 | SDA: 21, SCL: 22 | Interface Visual Humano-Máquina (HMI) via I2C |
+| Sensor PIR | 1 | GPIO 15 | Detecção de presença para acordar o sistema |
+| LED Verde | 1 | GPIO 2 | Indica acesso liberado |
+| LED Vermelho | 1 | GPIO 4 | Indica senha errada ou alarme ativo |
+| LED Amarelo | 1 | GPIO 5 | Indica modo de configuração ativo |
+| Buzzer Piezo | 1 | GPIO 18 | Feedback sonoro via PWM (bipes e sirene) |
+| Botão 1 | 1 | GPIO 13 | Dígito 1 da senha |
+| Botão 2 | 1 | GPIO 12 | Dígito 2 da senha |
+| Botão 3 | 1 | GPIO 14 | Dígito 3 da senha |
+| Botão 4 | 1 | GPIO 27 | Dígito 4 (e Botão de Setup via Long Press) |
+| Botão 5 | 1 | GPIO 26 | **NOVO:** Função Backspace (Apagar) e Voltar/Cancelar |
+```
+
 
 ---
+
 
 ## 4️⃣ Decisões Técnicas Relevantes
 
-### Máquina de estados (FSM)
-A lógica foi organizada em 5 estados bem definidos (`IDLE`, `ENTERING`, `GRANTED`, `DENIED`, `ALARM`), com transições explícitas via `mudar_estado()`. Isso evita lógica condicional aninhada e torna o código fácil de expandir.
+* **Persistência de Dados (NVS):** O uso do módulo `json` para ler e gravar a senha no sistema de arquivos Flash simula requisitos reais da indústria para armazenamento não-volátil.
+* **Segurança de Configuração (AUTH_CHANGE):** Para impedir que pessoas não autorizadas redefinam a senha, o sistema agora exige a autenticação da senha antiga antes de liberar a gravação de uma nova.
+* **UX Melhorada (Backspace / Cancel):** Implementação de um 5º botão com dupla função contextual. Se há dígitos digitados, ele apaga o último caractere. Se o campo está vazio, ele atua como "Cancelar", abortando a operação e voltando ao estado inicial com segurança.
+* **Power Management (Standby):** Adição de um estado inicial de economia de energia. A interface só liga quando o sensor PIR detecta movimento.
+* **Detecção de Long Press:** O Botão 4 executa dupla função. Um clique rápido registra o dígito "4". Segurar por 3 segundos aciona a rotina de alteração de senha.
 
-### Temporização não-bloqueante
-Toda temporização usa `time.ticks_ms()` e `time.ticks_diff()` em vez de `time.sleep()`. O único `sleep` bloqueante é o beep de 50ms no pressionamento do botão — aceitável pois é brevíssimo e ocorre fora do fluxo principal de controle.
-
-### Debounce por software
-Cada botão possui seu próprio timestamp de debounce (`t_debounce`), evitando leituras duplicadas sem necessidade de hardware adicional.
-
-### Senha configurável
-A senha e os limites de tempo são definidos como constantes no topo do arquivo, facilitando ajustes sem modificar a lógica.
-
-### Separação de responsabilidades
-- `ler_botao_pressionado()` — leitura de hardware com debounce
-- `mudar_estado()` — transições e saídas iniciais
-- `todos_leds_off()` — reset de atuadores
-- `run()` — loop da máquina de estados
 
 ---
 
-## 5️⃣ Resultados Obtidos
 
-O sistema funciona conforme esperado na simulação do Wokwi:
+## 5️⃣ Como Testar no Simulador (Tutorial)
 
-- **IDLE**: LED amarelo pisca lentamente (800ms), aguardando interação
-- **ENTERING**: LED amarelo fixo; cada botão emite um beep e é registrado na sequência
-- **Senha correta**: LED verde acende por 3 segundos e sistema retorna ao IDLE
-- **Senha errada (< 3x)**: LED vermelho pisca por 2 segundos, depois permite nova tentativa
-- **Alarme (3 erros)**: LED vermelho pisca rapidamente + buzzer contínuo por 10 segundos
-- **Timeout**: se o usuário demorar mais de 10s para completar a senha, reinicia
+Para avaliar todas as funcionalidades do protótipo no Wokwi, siga este passo a passo:
 
-Todos os requisitos funcionais foram atendidos e o pipeline do GitHub Actions executa sem erros.
+> 🔑 **Senha Padrão de Fábrica:** `1 - 3 - 2 - 4`
+
+1. **Acordar o Sistema:** O código inicia em modo `STANDBY`. Clique no sensor **PIR** e selecione *"Simulate motion"* para o sistema ligar a tela e ir para o estado `IDLE`.
+2. **Testar o Backspace (Botão 5):** Comece a digitar uma senha. Aperte o **Botão 5** para ver o sistema apagar o último dígito tocando um bipe grave. Se você apertar o Botão 5 com a tela vazia, ele cancela a ação.
+3. **Acesso Bem-sucedido:** Digite a senha padrão correta: **B1, B3, B2, B4**. O LED verde acenderá com uma mensagem de boas-vindas.
+4. **Alterar a Senha com Segurança:** No modo `IDLE`, **clique e segure o Botão 4 por cerca de 3 segundos**. 
+   * *O sistema pedirá a senha antiga primeiro.* Digite `1-3-2-4`.
+   * *Se acertar*, o LED Amarelo pisca e ele pede a **NOVA SENHA**. Digite 4 botões de sua escolha. A nova senha será persistida na memória flash!
+5. **Testar o Alarme:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente e o Buzzer emitirá um som de sirene, bloqueando o cofre temporariamente.
+
 
 ---
 
-## 6️⃣ Comentários Adicionais
 
-### Limitações
-- O sistema não possui armazenamento persistente: reinicializações resetam o contador de tentativas
-- A senha é definida em texto claro no código — em produção, deveria ser armazenada de forma segura
+## 5️⃣ Como Testar no Simulador (Tutorial)
 
-### Melhorias com mais tempo
-- Adicionar display OLED para mostrar número de dígitos digitados
-- Permitir cadastro de nova senha via sequência especial
-- Implementar múltiplos níveis de acesso com senhas diferentes
+Para avaliar todas as funcionalidades do protótipo no Wokwi, siga este passo a passo:
+
+> 🔑 **Senha Padrão de Fábrica:** `1 - 3 - 2 - 4`
+
+1. **Acordar o Sistema:** O código inicia em modo `STANDBY`. Clique no sensor **PIR** e selecione *"Simulate motion"* para o sistema ligar a tela e ir para o estado `IDLE`.
+2. **Acesso Bem-sucedido:** Digite a senha padrão clicando na sequência dos botões: **B1, B3, B2, B4**. O LED verde acenderá com uma mensagem de boas-vindas.
+3. **Alterar a Senha (Long Press):** Com o sistema no modo `IDLE` (SISTEMA PRONTO), **clique e segure o Botão 4 por cerca de 3 segundos**. O LED Amarelo vai acender e o display pedirá a nova senha. Clique em 4 botões para definir a nova sequência. (Ela será salva na memória flash!).
+4. **Testar o Alarme:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente e o Buzzer emitirá um som de sirene, bloqueando o cofre por 10 segundos.
+
+
+---
+
+
+## 6️⃣ Resultados Obtidos
+
+
+O sistema roda perfeitamente sem gargalos.
+
+
+- **STANDBY:** Tela exibe "MODO ECONOMIA", aguardando o PIR.
+- **IDLE / ENTERING:** OLED exibe asteriscos `*` à medida que a senha é digitada.
+- **SET_PWD:** LED amarelo acende, indicando gravação de nova senha.
+- **Sucesso:** Tela exibe "ACESSO OK", LED verde acende, e som de liberação toca.
+- **Alarme:** Após 3 erros, a tela exibe alerta, LED vermelho pisca rapidamente e o Buzzer alterna frequências simulando uma sirene de polícia.
+
+
+---
+
+
+## 7️⃣ Demonstração Visual
+
+
+*(Abaixo estão os registros do funcionamento do projeto)*
+
+
+### 📸 Circuito Montado
+![Foto da Placa](COLE_AQUI_O_LINK_DA_SUA_FOTO)
+
+
+### ✅ Teste de Sucesso (Acesso Liberado)
+![Vídeo de Sucesso](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_SUCESSO)
+
+
+### ❌ Teste de Falha (Alarme Disparado)
+![Vídeo de Falha](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_FALHA)
+
+
+---
+
+
+## 8️⃣ Comentários Adicionais
+
+
+### Limitações e Melhorias Futuras
+- **Wi-Fi e MQTT:** Como próximo passo lógico para um sistema ESP32, planejo integrar o protocolo MQTT para enviar alertas em tempo real ("Invasão Detectada" ou "Cofre Aberto") para um *broker* na nuvem.
+- **Criptografia:** Atualmente o `config.json` salva a senha em texto plano. Em produção, seria necessário aplicar um *hash* (como SHA-256) antes de armazenar os dados na Flash.
+
 
 ### Aprendizados
-O principal aprendizado foi entender como estruturar firmware com máquina de estados em vez de sequências lineares com `sleep`. Essa abordagem torna o sistema muito mais responsivo e escalável.
+O grande salto deste projeto foi integrar múltiplos protocolos (I2C para tela, PWM para áudio e Digital IO para sensores) mantendo a estabilidade da FSM sem o uso do bloqueio do processador, elevando o projeto de um nível "Maker" para "Embedded Software Engineer".
 ****
