@@ -1,4 +1,8 @@
 [wokwi]
 version = 1
-firmware = "flasher_args.json"
-rfc2217ServerPort = 4000
+firmware = "https://github.com/wokwi/wokwi-pi-pico-micropython/releases/download/v1.20.0/firmware.uf2"
+elf = ""
+
+[[file]]
+name = "main.py"
+src = "src/main.py"
