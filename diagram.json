@@ -58,7 +58,7 @@
       "id": "btn4",
       "top": 340,
       "left": 240,
-      "attrs": { "color": "red", "label": "4" }
+      "attrs": { "color": "green", "label": "4" }
     },
     {
       "type": "wokwi-pushbutton",
@@ -91,7 +91,7 @@
     [ "btn2:2.l", "esp:GND.2", "black", [] ],
     [ "esp:D14", "btn3:1.l", "green", [] ],
     [ "btn3:2.l", "esp:GND.3", "black", [] ],
-    [ "esp:D27", "btn4:1.l", "red", [] ],
+    [ "esp:D27", "btn4:1.l", "green", [] ],
     [ "btn4:2.l", "esp:GND.3", "black", [] ],
     [ "esp:D26", "btn5:1.l", "orange", [] ],
     [ "btn5:2.l", "esp:GND.3", "black", [] ],

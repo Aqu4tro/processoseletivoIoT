@@ -19,15 +19,16 @@
 
 ## 1️⃣ Visão Geral da Solução
 
+Este projeto implementa um **sistema de controle de acesso avançado** simulado em hardware virtual (ESP32 via Wokwi). 
 
-Este projeto implementa um **sistema de controle de acesso avançado** simulado em hardware virtual (ESP32 via Wokwi).
-
+Embora o escopo principal seja a simulação de um **cofre inteligente**, a arquitetura de firmware desenvolvida aqui é altamente abrangente. Por utilizar uma gestão eficiente de estados, interface humana-máquina (HMI) e persistência de dados, o mesmo código base pode ser facilmente adaptado para outros cenários do mundo real, tais como:
+* Fechaduras eletrônicas residenciais ou de hotelaria.
+* Painéis de alarme de segurança patrimonial.
+* Intertravamento de máquinas industriais (exigindo senha de operador para ligar).
 
 O sistema evoluiu de um simples teclado de senhas para uma solução completa de IoT focada em eficiência. Ele aguarda em modo de baixo consumo (Standby) até detectar presença. Ao ser ativado, o usuário interage através de um Display OLED e insere a senha. Se correta, o acesso é liberado; em caso de múltiplas falhas, um alarme é disparado.
 
-
 **Diferencial:** A senha configurada pelo usuário é salva na memória Flash do microcontrolador, sobrevivendo a reinicializações (quedas de energia).
-
 
 ---
 
@@ -91,8 +92,8 @@ stateDiagram-v2
 | Botão 1 | 1 | GPIO 13 | Dígito 1 da senha |
 | Botão 2 | 1 | GPIO 12 | Dígito 2 da senha |
 | Botão 3 | 1 | GPIO 14 | Dígito 3 da senha |
-| Botão 4 | 1 | GPIO 27 | Dígito 4 (e Botão de Setup via Long Press) |
-| Botão 5 | 1 | GPIO 26 | **NOVO:** Função Backspace (Apagar) e Voltar/Cancelar |
+| Botão 4 | 1 | GPIO 27 | Dígito 4 da senha |
+| Botão 5 | 1 | GPIO 26 | **NOVO:** Função Backspace (Apagar), Voltar/Cancelar e Configuração de Senha (Long Press) |
 ```
 
 
@@ -101,12 +102,12 @@ stateDiagram-v2
 
 ## 4️⃣ Decisões Técnicas Relevantes
 
+* **Driver Local (`ssd1306.py`):** Optou-se por criar/incluir o arquivo `ssd1306.py` diretamente no projeto em vez de depender de gerenciadores de pacotes (como `mip` ou `upip`). Isso garante total portabilidade, assegurando que o código rode perfeitamente offline, em simuladores como o Wokwi, ou em placas físicas recém-formatadas sem depender de conexão com a internet para baixar dependências do display.
 * **Persistência de Dados (NVS):** O uso do módulo `json` para ler e gravar a senha no sistema de arquivos Flash simula requisitos reais da indústria para armazenamento não-volátil.
 * **Segurança de Configuração (AUTH_CHANGE):** Para impedir que pessoas não autorizadas redefinam a senha, o sistema agora exige a autenticação da senha antiga antes de liberar a gravação de uma nova.
 * **UX Melhorada (Backspace / Cancel):** Implementação de um 5º botão com dupla função contextual. Se há dígitos digitados, ele apaga o último caractere. Se o campo está vazio, ele atua como "Cancelar", abortando a operação e voltando ao estado inicial com segurança.
 * **Power Management (Standby):** Adição de um estado inicial de economia de energia. A interface só liga quando o sensor PIR detecta movimento.
-* **Detecção de Long Press:** O Botão 4 executa dupla função. Um clique rápido registra o dígito "4". Segurar por 3 segundos aciona a rotina de alteração de senha.
-
+* **Detecção de Long Press e Prevenção de Bug:** O Botão 5 executa dupla função. Segurar por 3 segundos aciona a rotina de alteração de senha. Foi implementada uma trava de software (loop de espera) para garantir que o sistema não leia a soltura do botão como um cancelamento involuntário logo após mudar de tela.
 
 ---
 
@@ -119,27 +120,11 @@ Para avaliar todas as funcionalidades do protótipo no Wokwi, siga este passo a 
 
 1. **Acordar o Sistema:** O código inicia em modo `STANDBY`. Clique no sensor **PIR** e selecione *"Simulate motion"* para o sistema ligar a tela e ir para o estado `IDLE`.
 2. **Testar o Backspace (Botão 5):** Comece a digitar uma senha. Aperte o **Botão 5** para ver o sistema apagar o último dígito tocando um bipe grave. Se você apertar o Botão 5 com a tela vazia, ele cancela a ação.
-3. **Acesso Bem-sucedido:** Digite a senha padrão correta: **B1, B3, B2, B4**. O LED verde acenderá com uma mensagem de boas-vindas.
-4. **Alterar a Senha com Segurança:** No modo `IDLE`, **clique e segure o Botão 4 por cerca de 3 segundos**. 
+3. **Acesso Bem-sucedido:** Digite a senha padrão correta: **B1, B3, B2, B4**. O LED verde acenderá com uma mensagem de boas-vindas e um bipe de sucesso será emitido.
+4. **Alterar a Senha com Segurança:** No modo `IDLE`, **clique e segure o Botão 5 por cerca de 3 segundos**. 
    * *O sistema pedirá a senha antiga primeiro.* Digite `1-3-2-4`.
-   * *Se acertar*, o LED Amarelo pisca e ele pede a **NOVA SENHA**. Digite 4 botões de sua escolha. A nova senha será persistida na memória flash!
-5. **Testar o Alarme:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente e o Buzzer emitirá um som de sirene, bloqueando o cofre temporariamente.
-
-
----
-
-
-## 5️⃣ Como Testar no Simulador (Tutorial)
-
-Para avaliar todas as funcionalidades do protótipo no Wokwi, siga este passo a passo:
-
-> 🔑 **Senha Padrão de Fábrica:** `1 - 3 - 2 - 4`
-
-1. **Acordar o Sistema:** O código inicia em modo `STANDBY`. Clique no sensor **PIR** e selecione *"Simulate motion"* para o sistema ligar a tela e ir para o estado `IDLE`.
-2. **Acesso Bem-sucedido:** Digite a senha padrão clicando na sequência dos botões: **B1, B3, B2, B4**. O LED verde acenderá com uma mensagem de boas-vindas.
-3. **Alterar a Senha (Long Press):** Com o sistema no modo `IDLE` (SISTEMA PRONTO), **clique e segure o Botão 4 por cerca de 3 segundos**. O LED Amarelo vai acender e o display pedirá a nova senha. Clique em 4 botões para definir a nova sequência. (Ela será salva na memória flash!).
-4. **Testar o Alarme:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente e o Buzzer emitirá um som de sirene, bloqueando o cofre por 10 segundos.
-
+   * *Se acertar*, o LED Amarelo pisca com um bipe e ele pede a **NOVA SENHA**. Digite 4 botões de sua escolha. A nova senha será persistida na memória flash e o sistema confirmará o sucesso!
+5. **Testar o Alarme:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente, a tela exibirá a mensagem de bloqueio e o Buzzer emitirá um som de sirene contínua, bloqueando o sistema temporariamente por 10 segundos.
 
 ---
 
@@ -174,9 +159,28 @@ O sistema roda perfeitamente sem gargalos.
 ![Vídeo de Sucesso](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_SUCESSO)
 
 
+
+
+---
+## 7️⃣ Demonstração Visual
+
+*(Abaixo estão os registros do funcionamento do projeto testando todos os casos de uso)*
+
+### 📸 Circuito Montado
+![Foto da Placa](COLE_AQUI_O_LINK_DA_SUA_FOTO)
+
+### ✅ Teste de Sucesso (Acesso Liberado)
+![Vídeo de Sucesso](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_SUCESSO)
+
 ### ❌ Teste de Falha (Alarme Disparado)
 ![Vídeo de Falha](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_FALHA)
 
+
+### 🚨 Teste de Alarme (3 Erros e Bipe Contínuo)
+![Vídeo do Alarme](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DO_ALARME)
+
+### 🔄 Teste de Troca de Senha (Autenticação e Gravação NVS)
+![Vídeo da Troca de Senha](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_TROCA_DE_SENHA)
 
 ---
 
