@@ -23,4 +23,4 @@ RUN cd mklittlefs && \
   ./mklittlefs -c ~/fs -b 4096 -p 256 -s 0x200000 /fs.bin
 
 
-CMD ["/bin/bash"]
+CMD ["ls", "-l", "/fs.bin"]
