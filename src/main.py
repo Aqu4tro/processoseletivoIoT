@@ -1,9 +1,8 @@
-print("Teste")
-
 from machine import Pin, PWM, SoftI2C
 import time
 import ssd1306
 import json
+print("Teste")
 
 # -------------------------------------------------------------
 # PERSISTÊNCIA (NVS - Non-Volatile Storage)
