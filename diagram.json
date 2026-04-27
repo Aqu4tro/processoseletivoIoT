@@ -73,7 +73,7 @@
       "id": "oled",
       "top": -12.5,
       "left": 443.5,
-      "attrs": { "color": "white" }
+      "attrs": {}
     }
   ],
   "connections": [
@@ -90,17 +90,17 @@
     [ "esp:D12", "btn2:1.l", "green", [] ],
     [ "btn2:2.l", "esp:GND.2", "black", [] ],
     [ "esp:D14", "btn3:1.l", "green", [] ],
-    [ "btn3:2.l", "esp:GND.3", "black", [] ],
+    [ "btn3:2.l", "esp:GND.2", "black", [] ],
     [ "esp:D27", "btn4:1.l", "green", [] ],
-    [ "btn4:2.l", "esp:GND.3", "black", [] ],
+    [ "btn4:2.l", "esp:GND.2", "black", [] ],
     [ "esp:D26", "btn5:1.l", "orange", [] ],
-    [ "btn5:2.l", "esp:GND.3", "black", [] ],
+    [ "btn5:2.l", "esp:GND.2", "black", [] ],
     [ "esp:D15", "pir:OUT", "yellow", [ "h0" ] ],
     [ "pir:VCC", "esp:3V3", "red", [ "v0" ] ],
     [ "pir:GND", "esp:GND.1", "black", [ "v0" ] ],
-    [ "esp:D22", "oled:SCL", "cyan", [ "h0" ] ],
-    [ "esp:D21", "oled:SDA", "cyan", [ "h0" ] ],
-    [ "oled:VCC", "esp:3V3", "red", [ "v0" ] ],
+    [ "esp:D22", "oled:CLK", "cyan", [ "h0" ] ],
+    [ "esp:D21", "oled:DATA", "cyan", [ "h0" ] ],
+    [ "oled:VIN", "esp:3V3", "red", [ "v0" ] ],
     [ "oled:GND", "esp:GND.1", "black", [ "h-153.4", "v112.02" ] ]
   ],
   "dependencies": {}
