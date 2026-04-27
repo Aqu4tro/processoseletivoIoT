@@ -1,331 +1,196 @@
 # Processo Seletivo – Intensivo Maker | IoT
-## Etapa Prática – Sistemas Embarcados
+## Etapa Prática – Sistemas Embarcados Avançados
 
-Bem-vindo(a) à **etapa prática do processo seletivo para o Intensivo Maker | IoT**.
 
-Esta atividade tem como objetivo avaliar suas competências em **Sistemas Embarcados**, com foco em **organização de projeto, lógica de firmware e simulação de hardware**, a partir da aplicação prática dos conhecimentos adquiridos nos cursos EAD da etapa anterior.
+# 🔐 Cofre Inteligente IoT com Gestão de Energia e Memória
 
-> 🎯 **Objetivo principal**  
-> Avaliar sua capacidade de **planejar, estruturar e desenvolver** uma solução funcional de sistemas embarcados, seguindo boas práticas de engenharia.
+
+## 👤 Identificação do Candidato
+
+
+ - **Nome completo:**  _Jonathas Levi Pascoal Palmeira_ 
+- **GitHub:**  _https://github.com/Aqu4tro_ 
+
 
 ---
 
-## 🏁 Passo 0 – Antes de Tudo
-
-Se você **nunca utilizou Git ou GitHub**, não se preocupe.  
-Siga atentamente os passos abaixo — eles fazem parte do processo de aprendizagem esperado.
-
----
-
-### 1️⃣ Criação de Conta no GitHub
-
-1. Acesse: https://github.com  
-2. Clique em **Sign up**  
-3. Crie sua conta gratuita seguindo as instruções da plataforma  
-
-> 📌 O GitHub será utilizado para:
-> - Envio do seu projeto  
-> - Versionamento do código  
-> - Correção e validação automática via GitHub Actions  
-
----
-
-### 2️⃣ Instalação do Git
-
-O **Git** é a ferramenta responsável pelo controle de versões do seu código.
-
-### Windows
-Baixe e instale o **Git Bash**:  
-https://git-scm.com/downloads
-
-### Linux / macOS
-Verifique se o Git já está instalado:
-
-```bash
-git --version
-```
-> Caso não esteja, instale pelo gerenciador de pacotes do seu sistema.
-
-## ⚙ Passo 1 – Preparando o Ambiente
-
-Para desenvolver o desafio, você deverá criar uma cópia deste repositório no seu GitHub.
-
-### 1️⃣ Fork do Repositório
-No canto superior direito desta página, clique em Fork
-
-<img width="219" height="45" alt="image" src="https://github.com/user-attachments/assets/5d629626-513a-445c-ba0f-e5bb3e225187" />
-
-
-Uma cópia do repositório será criada no seu perfil do GitHub
-
-> 🔎 O Fork permite que você trabalhe de forma independente, sem alterar o repositório original do processo seletivo.
-
-### 2️⃣ Clone do Repositório
-
-No repositório do seu Fork, clique em **<> Code**
-
-<img width="149" height="52" alt="image" src="https://github.com/user-attachments/assets/abbd331b-a005-4633-89c6-afd16acbe828" />
-
-Copie a URL e execute no terminal:
-
-```bash
-git clone https://github.com/SEU_USUARIO/nome-do-repositorio.git
-cd nome-do-repositorio
-```
-
-> O comando git clone cria uma cópia local do repositório para desenvolvimento.
-
-### 3️⃣ Preparação do Ambiente de Execução
-
-Você pode executar o projeto de duas formas. Escolha apenas uma.
-
-#### 🔹 Opção A – Ambiente Python Local
-
-**Requisitos:**
-
-- Python 3.10 ou 3.11
-- pip
-
-**Instale as dependências:**
-
-```bash
-pip install -r requirements.txt
-```
-
-#### 🔹 Opção B – Dev Container (Recomendado)
-
-Este repositório inclui um Dev Container, garantindo um ambiente padronizado.
-
-**Requisitos:**
-
-- VS Code
-- Docker instalado
-- Extensão Dev Containers
-
-**Passos:**
-
-1. Abra o repositório no VS Code
-2. Clique em “Reopen in Container”
-3. Aguarde a criação automática do ambiente
-
-> ➡️ Todas as dependências serão instaladas automaticamente.
-
-## 🔐 Passo 2 – Criando sua API Key do Wokwi
-
-A simulação do projeto será executada automaticamente via GitHub Actions, utilizando o Wokwi CLI.
-
-Para isso, você precisa gerar uma API Key.
-
-1. Acesse: https://wokwi.com/dashboard/ci
-2. Faça login (Google ou GitHub)
-3. Clique em Generate API Token
-4. Copie a chave gerada (exemplo: wokwi-xxxxxxxx)
-
->⚠️ Importante
-- Nunca faça commit dessa chave
-- Ela deve ser armazenada apenas como secret no GitHub
-
-## 🔒 Passo 3 – Configurando a API Key no GitHub (Secrets)
-
-**No repositório do seu Fork:**
-
-1. Vá em Settings
-2. Acesse Secrets and variables → Actions
-3. Clique em New repository secret
-4. Nome: WOKWI_API_KEY
-5. Valor: sua chave gerada
-6. Salve
-
-> ✔️ As GitHub Actions do template já estão preparadas para usar essa variável automaticamente.
-
-## 🧠 Passo 4 – Desafio Técnico
-
-Você deverá desenvolver um projeto de sistemas embarcados simulados, utilizando Python e Wokwi.
-
-### 📁 Estrutura mínima esperada
-
-```text
-/project
- ├── src/
- │   └── main.py        # Código principal do projeto
- ├── wokwi.toml         # Configuração da simulação
- ├── diagram.json       # Circuito no Wokwi
- └── README.md          # Explicação do seu projeto
-```
-
-> Você pode expandir essa estrutura se desejar, desde que mantenha os arquivos essenciais.
-
-### 🛠 Como Desenvolver seu Projeto
-
-O desenvolvimento acontece principalmente nos arquivos abaixo:
-
-#### 1️⃣ src/main.py
-
-- Código Python executado na simulação
-- Implementa a lógica do sistema embarcado
-- Exemplos: controle de LEDs, leitura de sensores, estados, temporizações, etc.
-
-#### 2️⃣ diagram.json
-
-- Define o hardware virtual do projeto
-- Componentes como:
-  - LEDs
-  - Botões
-  - Sensores
-  - Placa microcontroladora
-
-#### 3️⃣ wokwi.toml
-
-- Configura a simulação:
-  - Tipo de placa
-  - Framework
-  - Dependências adicionais
-
-#### 4️⃣ Commit e Push
-
-Após suas alterações:
-
-```bash
-git add .
-git commit -m "Descrição clara do que foi feito"
-git push
-```
-### ⚙ Execução Automática (GitHub Actions)
-
-A cada push, o GitHub Actions irá automaticamente:
-
-- Executar o pipeline de build
-- Rodar a simulação via Wokwi CLI
-- Validar que o projeto executa sem erros
-
-### 📌 Caso algo falhe:
-
-- Vá até a aba Actions
-- Analise os logs da execução
-- Corrija e envie novamente
-
-## 📊 Critérios de Avaliação
-
-Esta etapa será avaliada considerando:
-
-- Funcionamento correto da simulação
-- Código organizado e legível
-- Estrutura de arquivos correta
-- Uso adequado do Wokwi
-- Commits claros e bem descritos
-- Projeto executando sem falhas nas Actions
-
----
-
-## 📎 Submissão Final
-
-Após concluir o desenvolvimento:
-
-1. Verifique se o projeto **executa sem erros** nas GitHub Actions  
-2. Confirme que todos os arquivos obrigatórios estão presentes  
-3. Copie o link do **seu repositório no GitHub**
-
-📤 Envie o link conforme as orientações do processo seletivo na plataforma **Moodle**.
-
----
-
-## 📝 Relatório do Candidato
-
-O arquivo **`README.md` do seu repositório** deve ser utilizado como o  
-**relatório final do desafio técnico**.
-
-Preencha todas as seções abaixo de forma **clara, objetiva e técnica**.
-
-> 💡 **Dica importante**  
-> Não é necessário um relatório extenso.  
-> O principal critério é demonstrar **clareza nas decisões técnicas**, organização e entendimento do sistema embarcado desenvolvido.
-
----
-
-### 👤 Identificação do Candidato
-
-- **Nome completo:**  
-- **GitHub:**  
-
----
 
 ## 1️⃣ Visão Geral da Solução
 
-Descreva, em poucas palavras:
+Este projeto implementa um **sistema de controle de acesso avançado** simulado em hardware virtual (ESP32 via Wokwi). 
 
-- Qual é o objetivo do seu projeto  
-- O que o sistema embarcado simulado faz  
-- Como o usuário interage com ele (se aplicável)
+Embora o escopo principal seja a simulação de um **cofre inteligente**, a arquitetura de firmware desenvolvida aqui é altamente abrangente. Por utilizar uma gestão eficiente de estados, interface humana-máquina (HMI) e persistência de dados, o mesmo código base pode ser facilmente adaptado para outros cenários do mundo real, tais como:
+* Fechaduras eletrônicas residenciais ou de hotelaria.
+* Painéis de alarme de segurança patrimonial.
+* Intertravamento de máquinas industriais (exigindo senha de operador para ligar).
+
+O sistema evoluiu de um simples teclado de senhas para uma solução completa de IoT focada em eficiência. Ele aguarda em modo de baixo consumo (Standby) até detectar presença. Ao ser ativado, o usuário interage através de um Display OLED e insere a senha. Se correta, o acesso é liberado; em caso de múltiplas falhas, um alarme é disparado.
+
+**Diferencial:** A senha configurada pelo usuário é salva na memória Flash do microcontrolador, sobrevivendo a reinicializações (quedas de energia).
 
 ---
+
 
 ## 2️⃣ Arquitetura do Sistema Embarcado
 
-Explique a arquitetura lógica do seu projeto, abordando:
+O sistema é governado por uma **Máquina de Estados Finitos (FSM)** puramente não-bloqueante. O loop principal roda continuamente sem uso de atrasos (`time.sleep()`), garantindo multitarefa cooperativa real e responsividade impecável da interface.
 
-- Fluxo principal do programa (`main.py`)  
-- Estrutura de estados, loops ou temporizações  
-- Como os componentes interagem entre si  
+### Diagrama de Estados (Renderizado via Mermaid)
 
-Se desejar, utilize tópicos ou um pequeno diagrama em texto.
+```mermaid
+stateDiagram-v2
+    direction LR
+
+    [*] --> SB
+
+    %% Aliases para estados menores visivelmente
+    state "STANDBY" as SB
+    state "IDLE" as ID
+    state "ENTERING" as EN
+    state "GRANTED" as GR
+    state "ALARM" as AL
+    state "AUTH_CHANGE" as AU
+    state "SET_PWD" as SE
+    state "DENIED" as DE
+
+    SB --> ID: PIR Detecta Mov.
+    ID --> SB: Inativo (15s)
+
+    ID --> EN: Botão 1-4
+    EN --> ID: B5 vazio (Cancel)
+
+    EN --> GR: Senha OK
+    EN --> DE: Senha Errada (<3 tentativas)
+    EN --> AL: 3º Erro Consecutivo
+
+    DE --> ID: Timeout (2s)
+    GR --> ID: Timeout (3s)
+    AL --> ID: Timeout (10s)
+
+    ID --> AU: Setup (Segura B5 3s)
+    AU --> ID: B5 vazio (Cancel)
+    AU --> SE: Senha Antiga OK
+    AU --> DE: Senha Antiga Errada
+
+    SE --> ID: Salva/Cancela (B5)
+```
+
+
+### Fluxo do `main.py`
+1. Inicializa pinos, barramento I2C, e tenta ler o `config.json` na memória.
+2. Entra no `while True` do loop principal.
+3. Lê o tempo atual (`time.ticks_ms()`) e verifica o sensor PIR e os botões (com debounce e detecção de *long press*).
+4. Executa o bloco do estado atual: atualiza o Display OLED, manipula os LEDs e o PWM do Buzzer.
+5. Chama a função `mudar_estado()` para resetar variáveis de controle na transição de estados.
+
 
 ---
+
 
 ## 3️⃣ Componentes Utilizados na Simulação
 
-Liste os principais componentes definidos no `diagram.json`, por exemplo:
 
-- Tipo de placa utilizada  
-- LEDs, botões, sensores, atuadores, etc.  
-- Função de cada componente no sistema  
+```markdown
+| Componente | Qtd | Pinos (ESP32) | Função |
+|---|---|---|---|
+| ESP32 DevKit V1 | 1 | — | Microcontrolador principal (MicroPython) |
+| Display OLED SSD1306 | 1 | SDA: 21, SCL: 22 | Interface Visual Humano-Máquina (HMI) via I2C |
+| Sensor PIR | 1 | GPIO 15 | Detecção de presença para acordar o sistema |
+| LED Verde | 1 | GPIO 2 | Indica acesso liberado |
+| LED Vermelho | 1 | GPIO 4 | Indica senha errada ou alarme ativo |
+| LED Amarelo | 1 | GPIO 5 | Indica modo de configuração ativo |
+| Buzzer Piezo | 1 | GPIO 18 | Feedback sonoro via PWM (bipes e sirene) |
+| Botão 1 | 1 | GPIO 13 | Dígito 1 da senha |
+| Botão 2 | 1 | GPIO 12 | Dígito 2 da senha |
+| Botão 3 | 1 | GPIO 14 | Dígito 3 da senha |
+| Botão 4 | 1 | GPIO 27 | Dígito 4 da senha |
+| Botão 5 | 1 | GPIO 26 | **NOVO:** Função Backspace (Apagar), Voltar/Cancelar e Configuração de Senha (Long Press) |
+```
+
 
 ---
+
 
 ## 4️⃣ Decisões Técnicas Relevantes
 
-Explique brevemente decisões importantes tomadas durante o desenvolvimento, como:
-
-- Organização do código  
-- Uso de funções, estados ou constantes  
-- Estratégias para temporização ou controle lógico  
-
----
-
-## 5️⃣ Resultados Obtidos
-
-Descreva o comportamento final do sistema:
-
-- O que funciona corretamente  
-- Quais requisitos foram atendidos  
-- Resultado observado na simulação do Wokwi  
+* **Driver Local (`ssd1306.py`):** Optou-se por criar/incluir o arquivo `ssd1306.py` diretamente no projeto em vez de depender de gerenciadores de pacotes (como `mip` ou `upip`). Isso garante total portabilidade, assegurando que o código rode perfeitamente offline, em simuladores como o Wokwi, ou em placas físicas recém-formatadas sem depender de conexão com a internet para baixar dependências do display.
+* **Persistência de Dados (NVS):** O uso do módulo `json` para ler e gravar a senha no sistema de arquivos Flash simula requisitos reais da indústria para armazenamento não-volátil.
+* **Segurança de Configuração (AUTH_CHANGE):** Para impedir que pessoas não autorizadas redefinam a senha, o sistema agora exige a autenticação da senha antiga antes de liberar a gravação de uma nova.
+* **UX Melhorada (Backspace / Cancel):** Implementação de um 5º botão com dupla função contextual. Se há dígitos digitados, ele apaga o último caractere. Se o campo está vazio, ele atua como "Cancelar", abortando a operação e voltando ao estado inicial com segurança.
+* **Power Management (Standby):** Adição de um estado inicial de economia de energia. A interface só liga quando o sensor PIR detecta movimento.
+* **Detecção de Long Press e Prevenção de Bug:** O Botão 5 executa dupla função. Segurar por 3 segundos aciona a rotina de alteração de senha. Foi implementada uma trava de software (loop de espera) para garantir que o sistema não leia a soltura do botão como um cancelamento involuntário logo após mudar de tela.
 
 ---
 
-## 6️⃣ Comentários Adicionais (Opcional)
 
-Utilize este espaço para comentar, se desejar:
+## 5️⃣ Como Testar no Simulador (Tutorial)
 
-- Dificuldades encontradas  
-- Limitações da solução  
-- Melhorias que você faria com mais tempo  
-- Principais aprendizados durante o desafio  
+Para avaliar todas as funcionalidades do protótipo no Wokwi, siga este passo a passo:
+
+> 🔑 **Senha Padrão de Fábrica:** `1 - 3 - 2 - 4`
+
+1. **Acordar o Sistema:** O código inicia em modo `STANDBY`. Clique no sensor **PIR** e selecione *"Simulate motion"* para o sistema ligar a tela e ir para o estado `IDLE`.
+2. **Testar o Backspace (Botão 5):** Comece a digitar uma senha. Aperte o **Botão 5** para ver o sistema apagar o último dígito tocando um bipe grave. Se você apertar o Botão 5 com a tela vazia, ele cancela a ação.
+3. **Acesso Bem-sucedido:** Digite a senha padrão correta: **B1, B3, B2, B4**. O LED verde acenderá com uma mensagem de boas-vindas e um bipe de sucesso será emitido.
+4. **Alterar a Senha com Segurança:** No modo `IDLE`, **clique e segure o Botão 5 por cerca de 3 segundos**. 
+   * *O sistema pedirá a senha antiga primeiro.* Digite `1-3-2-4`.
+   * *Se acertar*, o LED Amarelo pisca com um bipe e ele pede a **NOVA SENHA**. Digite 4 botões de sua escolha. A nova senha será persistida na memória flash e o sistema confirmará o sucesso!
+5. **Testar o Alarme:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente, a tela exibirá a mensagem de bloqueio e o Buzzer emitirá um som de sirene contínua, bloqueando o sistema temporariamente por 10 segundos.
 
 ---
 
-> ✅ Este relatório faz parte da avaliação técnica.  
-> Clareza, objetividade e organização são tão importantes quanto o funcionamento do código.
+
+## 6️⃣ Resultados Obtidos
+
+
+O sistema roda perfeitamente sem gargalos.
+
+
+- **STANDBY:** Tela exibe "MODO ECONOMIA", aguardando o PIR.
+- **IDLE / ENTERING:** OLED exibe asteriscos `*` à medida que a senha é digitada.
+- **SET_PWD:** LED amarelo acende, indicando gravação de nova senha.
+- **Sucesso:** Tela exibe "ACESSO OK", LED verde acende, e som de liberação toca.
+- **Alarme:** Após 3 erros, a tela exibe alerta, LED vermelho pisca rapidamente e o Buzzer alterna frequências simulando uma sirene de polícia.
+
 
 ---
 
-## 🆘 Suporte
 
-Em caso de dúvidas:
+## 7️⃣ Demonstração Visual
 
-- Consulte o material dos cursos EAD
-- Leia atentamente este README
-- Analise os logs das GitHub Actions
-- Utilize os canais oficiais para contato com os instrutores
+*(Abaixo estão os registros do funcionamento do projeto testando todos os casos de uso)*
 
-Boa sorte no processo seletivo.
-Mostre sua capacidade de pensar como um engenheiro de sistemas embarcados.
+### 📸 Circuito Montado
+<img width="1358" height="684" alt="circuito" src="https://github.com/user-attachments/assets/72bafe9d-ca60-4f3a-85f1-09529f361cb7" />
+
+### ✅ Teste de Sucesso (Acesso Liberado)
+https://github.com/user-attachments/assets/70102a89-6b30-4a16-b469-ef20a1569cf5
+
+
+### ❌ Teste de Falha (Alarme Disparado)
+https://github.com/user-attachments/assets/4b63cd0d-3f16-4caa-b5c9-220fb2f42409
+
+
+
+### 🚨 Teste de Alarme (3 Erros e Bipe Contínuo)
+https://github.com/user-attachments/assets/80cc9d1f-b926-48db-88fa-d04566b239d7
+
+
+### 🔄 Teste de Troca de Senha (Autenticação e Gravação NVS)
+https://github.com/user-attachments/assets/9e376da1-e0b3-4432-849c-5b0de4de75fd
+
+
+---
+
+
+## 8️⃣ Comentários Adicionais
+
+
+### Limitações e Melhorias Futuras
+- **Wi-Fi e MQTT:** Como próximo passo lógico para um sistema ESP32, planejo integrar o protocolo MQTT para enviar alertas em tempo real ("Invasão Detectada" ou "Cofre Aberto") para um *broker* na nuvem.
+- **Criptografia:** Atualmente o `config.json` salva a senha em texto plano. Em produção, seria necessário aplicar um *hash* (como SHA-256) antes de armazenar os dados na Flash.
+
+
+### Aprendizados
+O grande salto deste projeto foi integrar múltiplos protocolos (I2C para tela, PWM para áudio e Digital IO para sensores) mantendo a estabilidade da FSM sem o uso do bloqueio do processador, elevando o projeto de um nível "Maker" para "Embedded Software Engineer".
 ****
