@@ -8,10 +8,8 @@
 ## 👤 Identificação do Candidato
 
 
-| Campo | Valor |
-|---|---|
-| **Nome completo** | _Jonathas Levi Pascoal Palmeira_ |
-| **GitHub** | _https://github.com/Aqu4tro_ |
+ - **Nome completo:**  _Jonathas Levi Pascoal Palmeira_ 
+- **GitHub:**  _https://github.com/Aqu4tro_ 
 
 
 ---
