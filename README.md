@@ -37,29 +37,44 @@ O sistema é governado por uma **Máquina de Estados Finitos (FSM)** puramente n
 
 ### Diagrama de Estados (Renderizado via Mermaid)
 
+### Diagrama de Estados (Renderizado via Mermaid)
+
 ```mermaid
 stateDiagram-v2
-    [*] --> STANDBY
-    STANDBY --> IDLE : PIR Detecta Movimento
-    IDLE --> STANDBY : Timeout (15s inativo)
-    IDLE --> ENTERING : Botão 1-4 Pressionado
-    IDLE --> AUTH_CHANGE : Hold Botão 4 (3s)
+    direction LR
 
-    ENTERING --> GRANTED : Senha Correta
-    ENTERING --> DENIED : Senha Errada (< 3x)
-    ENTERING --> IDLE : Cancelar (Botão 5 s/ dígitos)
+    [*] --> SB
 
-    DENIED --> IDLE : Timeout (2s)
-    ENTERING --> ALARM : 3º Erro Consecutivo
-    ALARM --> IDLE : Timeout Bloqueio (10s)
-    GRANTED --> IDLE : Timeout Sucesso (3s)
+    %% Aliases para estados menores visivelmente
+    state "STANDBY" as SB
+    state "IDLE" as ID
+    state "ENTERING" as EN
+    state "GRANTED" as GR
+    state "ALARM" as AL
+    state "AUTH_CHANGE" as AU
+    state "SET_PWD" as SE
+    state "DENIED" as DE
 
-    AUTH_CHANGE --> SET_PWD : Senha Antiga Correta
-    AUTH_CHANGE --> DENIED : Senha Antiga Errada
-    AUTH_CHANGE --> IDLE : Cancelar (Botão 5 s/ dígitos)
+    SB --> ID: PIR Detecta Mov.
+    ID --> SB: Inativo (15s)
 
-    SET_PWD --> IDLE : Nova Senha Salva
-    SET_PWD --> IDLE : Cancelar (Botão 5 s/ dígitos)
+    ID --> EN: Botão 1-4
+    EN --> ID: B5 vazio (Cancel)
+
+    EN --> GR: Senha OK
+    EN --> DE: Senha Errada (<3 tentativas)
+    EN --> AL: 3º Erro Consecutivo
+
+    DE --> ID: Timeout (2s)
+    GR --> ID: Timeout (3s)
+    AL --> ID: Timeout (10s)
+
+    ID --> AU: Setup (Segura B5 3s)
+    AU --> ID: B5 vazio (Cancel)
+    AU --> SE: Senha Antiga OK
+    AU --> DE: Senha Antiga Errada
+
+    SE --> ID: Salva/Cancela (B5)
 ```
 
 
@@ -145,40 +160,23 @@ O sistema roda perfeitamente sem gargalos.
 
 ## 7️⃣ Demonstração Visual
 
-
-*(Abaixo estão os registros do funcionamento do projeto)*
-
-
-### 📸 Circuito Montado
-![Foto da Placa](COLE_AQUI_O_LINK_DA_SUA_FOTO)
-
-
-### ✅ Teste de Sucesso (Acesso Liberado)
-![Vídeo de Sucesso](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_SUCESSO)
-
-
-
-
----
-## 7️⃣ Demonstração Visual
-
 *(Abaixo estão os registros do funcionamento do projeto testando todos os casos de uso)*
 
 ### 📸 Circuito Montado
-![Foto da Placa](COLE_AQUI_O_LINK_DA_SUA_FOTO)
+![Foto da Placa](assets/circuito.png)
 
 ### ✅ Teste de Sucesso (Acesso Liberado)
-![Vídeo de Sucesso](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_SUCESSO)
+<video src="assets/acerto_de_senha.webm" controls width="100%"></video>
 
 ### ❌ Teste de Falha (Alarme Disparado)
-![Vídeo de Falha](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_FALHA)
+<video src="assets/erro_de_senha.webm" controls width="100%"></video>
 
 
 ### 🚨 Teste de Alarme (3 Erros e Bipe Contínuo)
-![Vídeo do Alarme](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DO_ALARME)
+<video src="assets/erro_triplo_de_senha_bloqueio.webm" controls width="100%"></video>
 
 ### 🔄 Teste de Troca de Senha (Autenticação e Gravação NVS)
-![Vídeo da Troca de Senha](COLE_AQUI_O_LINK_DO_SEU_VIDEO_DE_TROCA_DE_SENHA)
+<video src="assets/redefinir_senha.webm" controls width="100%"></video>
 
 ---
 
