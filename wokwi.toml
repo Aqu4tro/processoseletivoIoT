@@ -1,4 +1,3 @@
 [wokwi]
 version = 1
 firmware = "flasher_args.json"
-rfc2217ServerPort = 4000

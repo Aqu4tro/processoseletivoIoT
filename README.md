@@ -161,23 +161,24 @@ O sistema roda perfeitamente sem gargalos.
 *(Abaixo estão os registros do funcionamento do projeto testando todos os casos de uso)*
 
 ### 📸 Circuito Montado
-<img width="1358" height="684" alt="circuito" src="https://github.com/user-attachments/assets/72bafe9d-ca60-4f3a-85f1-09529f361cb7" />
+<img width="1365" height="685" alt="Captura de tela de 2026-04-27 02-21-59" src="https://github.com/user-attachments/assets/c3630afe-f5c0-4f09-ba11-4cd2223f860d" />
+
 
 ### ✅ Teste de Sucesso (Acesso Liberado)
-https://github.com/user-attachments/assets/70102a89-6b30-4a16-b469-ef20a1569cf5
+[Gravação de tela de 2026-04-27 02-21-00.webm](https://github.com/user-attachments/assets/74a3f0cc-6340-4a2e-82e3-6ba0e422fb69)
 
 
 ### ❌ Teste de Falha (Alarme Disparado)
-https://github.com/user-attachments/assets/4b63cd0d-3f16-4caa-b5c9-220fb2f42409
+[Gravação de tela de 2026-04-27 02-21-43.webm](https://github.com/user-attachments/assets/54d15568-ede4-4bd9-be4a-445d807640e9)
 
 
 
 ### 🚨 Teste de Alarme (3 Erros e Bipe Contínuo)
-https://github.com/user-attachments/assets/80cc9d1f-b926-48db-88fa-d04566b239d7
+[Gravação de tela de 2026-04-27 02-22-08.webm](https://github.com/user-attachments/assets/785e6b1c-3e2a-4974-a448-7bfe60413ed4)
 
 
 ### 🔄 Teste de Troca de Senha (Autenticação e Gravação NVS)
-https://github.com/user-attachments/assets/9e376da1-e0b3-4432-849c-5b0de4de75fd
+[Gravação de tela de 2026-04-27 02-22-44.webm](https://github.com/user-attachments/assets/35ee330b-0c0c-4517-855f-7051c65115d2)
 
 
 ---
