@@ -37,8 +37,6 @@ O sistema é governado por uma **Máquina de Estados Finitos (FSM)** puramente n
 
 ### Diagrama de Estados (Renderizado via Mermaid)
 
-### Diagrama de Estados (Renderizado via Mermaid)
-
 ```mermaid
 stateDiagram-v2
     direction LR
@@ -166,17 +164,17 @@ O sistema roda perfeitamente sem gargalos.
 ![Foto da Placa](assets/circuito.png)
 
 ### ✅ Teste de Sucesso (Acesso Liberado)
-<video src="assets/acerto_de_senha.webm" controls width="100%"></video>
+<video src="assets/acerto_de_senha.mp4" controls width="100%"></video>
 
 ### ❌ Teste de Falha (Alarme Disparado)
-<video src="assets/erro_de_senha.webm" controls width="100%"></video>
+<video src="assets/erro_de_senha.mp4" controls width="100%"></video>
 
 
 ### 🚨 Teste de Alarme (3 Erros e Bipe Contínuo)
-<video src="assets/erro_triplo_de_senha_bloqueio.webm" controls width="100%"></video>
+<video src="assets/erro_triplo_de_senha_bloqueio.mp4" controls width="100%"></video>
 
 ### 🔄 Teste de Troca de Senha (Autenticação e Gravação NVS)
-<video src="assets/redefinir_senha.webm" controls width="100%"></video>
+<video src="assets/redefinir_senha.mp4" controls width="100%"></video>
 
 ---
 
