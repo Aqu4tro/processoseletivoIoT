@@ -1,4 +1,4 @@
-from machine import Pin, PWM, I2C
+from machine import Pin, PWM, SoftI2C
 import time
 import ssd1306
 import json
@@ -8,17 +8,17 @@ import json
 # -------------------------------------------------------------
 CONFIG_FILE = "config.json"
 
-def carregar_senha():
+def load_password():
     try:
         with open(CONFIG_FILE, "r") as f:
-            dados = json.load(f)
-            return dados["senha"]
+            data = json.load(f)
+            return data["password"]
     except:
-        return [1, 3, 2, 4]
+        return [1, 3, 2, 4] # Senha padrão se for a primeira vez
 
-def salvar_senha(nova_senha):
+def save_password(new_password):
     with open(CONFIG_FILE, "w") as f:
-        json.dump({"senha": nova_senha}, f)
+        json.dump({"password": new_password}, f)
 
 # -------------------------------------------------------------
 # CONFIGURAÇÃO DE HARDWARE
@@ -28,16 +28,18 @@ LED_RED    = Pin(4,  Pin.OUT)
 LED_YELLOW = Pin(5,  Pin.OUT)
 BUZZER     = PWM(Pin(18), freq=1000, duty=0)
 PIR        = Pin(15, Pin.IN)
-i2c        = I2C(0, scl=Pin(22), sda=Pin(21))
+
+# Usando SoftI2C para estabilidade
+i2c        = SoftI2C(scl=Pin(22), sda=Pin(21))
 oled       = ssd1306.SSD1306_I2C(128, 64, i2c)
 
-# Adicionado o Botão 5 (Pino 26) para função Delete/Cancelar
-BOTOES = {
+# Os 5 botões
+BUTTONS = {
     1: Pin(13, Pin.IN, Pin.PULL_UP),
     2: Pin(12, Pin.IN, Pin.PULL_UP),
     3: Pin(14, Pin.IN, Pin.PULL_UP),
     4: Pin(27, Pin.IN, Pin.PULL_UP),
-    5: Pin(26, Pin.IN, Pin.PULL_UP) # NOVO BOTÃO
+    5: Pin(26, Pin.IN, Pin.PULL_UP) # DEL / CONFIG
 }
 
 # -------------------------------------------------------------
@@ -49,31 +51,31 @@ ENTERING    = "ENTERING"
 GRANTED     = "GRANTED"
 DENIED      = "DENIED"
 ALARM       = "ALARM"
-AUTH_CHANGE = "AUTH_CHANGE" # NOVO: Validação antes de mudar a senha
-SET_PWD     = "SET_PWD"
+AUTH_CHANGE = "AUTH_CHANGE" # Validação da senha antiga
+SET_PWD     = "SET_PWD"     # Definição da nova senha
 
 # Variáveis globais
-senha_atual = carregar_senha()
-estado      = STANDBY
-entrada     = []
-tentativas  = 0
-t_estado    = 0
-t_interacao = 0
-t_blink     = 0
-blink_on    = False
-t_debounce  = {1:0, 2:0, 3:0, 4:0, 5:0}
-t_long_press = 0
+current_password = load_password()
+state            = STANDBY
+input_code       = []
+attempts         = 0
+t_state          = 0
+t_interaction    = 0
+t_blink          = 0
+blink_on         = False
+t_debounce       = {1:0, 2:0, 3:0, 4:0, 5:0}
+t_long_press     = 0 # Temporizador para o clique longo
 
 # -------------------------------------------------------------
 # INTERFACE E LÓGICA
 # -------------------------------------------------------------
 
-def atualizar_oled(linha1, linha2=""):
+def update_oled(line1, line2=""):
     oled.fill(0)
     oled.text("COFRE IOT v2.0", 0, 0)
     oled.text("-" * 16, 0, 10)
-    oled.text(linha1, 0, 30)
-    oled.text(linha2, 0, 45)
+    oled.text(line1, 0, 30)
+    oled.text(line2, 0, 45)
     oled.show()
 
 def beep(f=1000, d=50):
@@ -82,144 +84,150 @@ def beep(f=1000, d=50):
     time.sleep_ms(d)
     BUZZER.duty(0)
 
-def mudar_estado(novo_estado):
-    global estado, t_estado, blink_on, entrada
-    estado = novo_estado
-    t_estado = time.ticks_ms()
+def change_state(new_state):
+    global state, t_state, blink_on, input_code
+    state = new_state
+    t_state = time.ticks_ms()
     LED_GREEN.off(); LED_RED.off(); LED_YELLOW.off(); BUZZER.duty(0)
-    entrada = []
+    input_code = []
     
-    if novo_estado == STANDBY:
-        atualizar_oled("MODO ECONOMIA", "PIR ATIVO...")
-    elif novo_estado == IDLE:
-        atualizar_oled("SISTEMA PRONTO", "DIGITE A SENHA")
-    elif novo_estado == AUTH_CHANGE:
-        atualizar_oled("SENHA ANTIGA:", "PARA LIBERAR")
+    if new_state == STANDBY:
+        update_oled("MODO ECONOMIA", "PIR ATIVO...")
+    elif new_state == IDLE:
+        update_oled("SISTEMA PRONTO", "DIGITE A SENHA")
+    elif new_state == AUTH_CHANGE:
+        update_oled("SENHA ANTIGA:", "PARA LIBERAR")
         LED_YELLOW.on()
         beep(1500, 100)
-    elif novo_estado == SET_PWD:
-        atualizar_oled("MODO CONFIG", "NOVA SENHA:")
+    elif new_state == SET_PWD:
+        update_oled("MODO CONFIG", "NOVA SENHA:")
         LED_YELLOW.on()
         beep(2000, 300)
 
 def run():
-    global estado, entrada, tentativas, t_blink, blink_on, t_interacao, senha_atual, t_long_press
+    global state, input_code, attempts, t_blink, blink_on, t_interaction, current_password, t_long_press
     
-    mudar_estado(STANDBY)
+    change_state(STANDBY)
     
     while True:
-        agora = time.ticks_ms()
+        now = time.ticks_ms()
         
-        btn_pres = None
-        for num, btn in BOTOES.items():
+        btn_pressed = None
+        for num, btn in BUTTONS.items():
             if btn.value() == 0:
-                if time.ticks_diff(agora, t_debounce[num]) > 250:
-                    t_debounce[num] = agora
-                    btn_pres = num
-                    t_interacao = agora
+                if time.ticks_diff(now, t_debounce[num]) > 250:
+                    t_debounce[num] = now
+                    btn_pressed = num
+                    t_interaction = now
                     break
 
-        if estado == STANDBY:
-            if PIR.value(): mudar_estado(IDLE)
+        if state == STANDBY:
+            if PIR.value(): change_state(IDLE)
 
-        elif estado == IDLE:
-            if BOTOES[4].value() == 0:
-                if t_long_press == 0: t_long_press = agora
-                elif time.ticks_diff(agora, t_long_press) > 3000:
+        elif state == IDLE:
+            # Lógica de segurar o botão 5 por 3 segundos
+            if BUTTONS[5].value() == 0:
+                if t_long_press == 0: 
+                    t_long_press = now
+                elif time.ticks_diff(now, t_long_press) > 3000:
                     t_long_press = 0
-                    mudar_estado(AUTH_CHANGE) # Pede a senha antiga
-                    btn_pres = None
+                    change_state(AUTH_CHANGE) # Entra no modo de trocar senha
+                    btn_pressed = None # Ignora o clique
+                    
+                    # CORREÇÃO: Espera o usuário tirar o dedo do botão antes de continuar
+                    while BUTTONS[5].value() == 0:
+                        time.sleep_ms(10)
+                    t_debounce[5] = time.ticks_ms() # Reseta o relógio do botão
             else:
-                if t_long_press > 0 and time.ticks_diff(agora, t_long_press) < 3000:
-                    entrada.append(4)
-                    beep()
-                    mudar_estado(ENTERING)
-                t_long_press = 0
+                t_long_press = 0 # Reseta se soltar o botão antes dos 3s
 
-            if btn_pres and btn_pres != 4 and btn_pres != 5:
-                entrada.append(btn_pres)
+            # Se apertou qualquer outro botão (1 a 4)
+            if btn_pressed and btn_pressed != 5:
+                input_code.append(btn_pressed)
                 beep()
-                mudar_estado(ENTERING)
+                change_state(ENTERING)
             
-            if time.ticks_diff(agora, t_interacao) > 15000: mudar_estado(STANDBY)
+            if time.ticks_diff(now, t_interaction) > 15000: change_state(STANDBY)
 
-        elif estado == ENTERING:
-            atualizar_oled("SENHA:", "*" * len(entrada))
-            if btn_pres:
-                if btn_pres == 5: # Botão Cancelar/Delete
-                    if len(entrada) > 0:
-                        entrada.pop()
+        elif state == ENTERING:
+            update_oled("SENHA:", "*" * len(input_code))
+            if btn_pressed:
+                if btn_pressed == 5:
+                    if len(input_code) > 0:
+                        input_code.pop()
                         beep(600, 50)
                     else:
-                        mudar_estado(IDLE)
+                        change_state(IDLE)
                 else:
-                    entrada.append(btn_pres)
+                    input_code.append(btn_pressed)
                     beep()
-                    if len(entrada) == 4:
-                        if entrada == senha_atual:
-                            tentativas = 0
-                            mudar_estado(GRANTED)
+                    if len(input_code) == 4:
+                        if input_code == current_password:
+                            beep(2000, 200)
+                            attempts = 0
+                            change_state(GRANTED)
                         else:
-                            tentativas += 1
-                            mudar_estado(ALARM if tentativas >= 3 else DENIED)
+                            attempts += 1
+                            change_state(ALARM if attempts >= 3 else DENIED)
 
-        elif estado == AUTH_CHANGE:
-            atualizar_oled("SENHA ANTIGA:", "*" * len(entrada))
-            if btn_pres:
-                if btn_pres == 5:
-                    if len(entrada) > 0:
-                        entrada.pop()
+        elif state == AUTH_CHANGE:
+            update_oled("SENHA ANTIGA:", "*" * len(input_code))
+            if btn_pressed:
+                if btn_pressed == 5: 
+                    if len(input_code) > 0:
+                        input_code.pop()
                         beep(600, 50)
                     else:
-                        mudar_estado(IDLE)
+                        change_state(IDLE) # Cancela e volta
                 else:
-                    entrada.append(btn_pres)
+                    input_code.append(btn_pressed)
                     beep()
-                    if len(entrada) == 4:
-                        if entrada == senha_atual:
-                            mudar_estado(SET_PWD)
+                    if len(input_code) == 4:
+                        if input_code == current_password:
+                            change_state(SET_PWD) # Senha correta, pode criar nova
                         else:
-                            mudar_estado(DENIED)
+                            change_state(DENIED) # Errou a senha antiga
 
-        elif estado == SET_PWD:
-            atualizar_oled("NOVA SENHA:", "*" * len(entrada))
-            if btn_pres:
-                if btn_pres == 5:
-                    if len(entrada) > 0:
-                        entrada.pop()
+        elif state == SET_PWD:
+            update_oled("NOVA SENHA:", "*" * len(input_code))
+            if btn_pressed:
+                if btn_pressed == 5:
+                    if len(input_code) > 0:
+                        input_code.pop()
                         beep(600, 50)
                     else:
-                        mudar_estado(IDLE)
+                        change_state(IDLE) # Cancela a troca
                 else:
-                    entrada.append(btn_pres)
+                    input_code.append(btn_pressed)
                     beep(1500, 100)
-                    if len(entrada) == 4:
-                        senha_atual = list(entrada)
-                        salvar_senha(senha_atual)
-                        atualizar_oled("SUCESSO!", "SENHA SALVA")
+                    if len(input_code) == 4:
+                        current_password = list(input_code)
+                        save_password(current_password)
+                        update_oled("SUCESSO!", "SENHA SALVA")
                         beep(2500, 500)
                         time.sleep(1)
-                        mudar_estado(IDLE)
+                        change_state(IDLE)
 
-        elif estado == GRANTED:
+        elif state == GRANTED:
             LED_GREEN.on()
-            atualizar_oled("ACESSO OK", "BEM-VINDO")
-            if time.ticks_diff(agora, t_estado) > 3000: mudar_estado(IDLE)
+            update_oled("ACESSO OK", "BEM-VINDO")
+            if time.ticks_diff(now, t_state) > 3000: change_state(IDLE)
 
-        elif estado == DENIED:
+        elif state == DENIED:
             LED_RED.on()
-            atualizar_oled("SENHA ERRADA", "TENTE DE NOVO")
-            if time.ticks_diff(agora, t_estado) > 2000: mudar_estado(IDLE)
+            update_oled("SENHA ERRADA", "TENTE DE NOVO")
+            if time.ticks_diff(now, t_state) > 2000: change_state(IDLE)
 
-        elif estado == ALARM:
-            if time.ticks_diff(agora, t_blink) > 150:
-                t_blink = agora
+        elif state == ALARM:
+            update_oled("ALARME!", "COFRE BLOQUEADO")
+            if time.ticks_diff(now, t_blink) > 150:
+                t_blink = now
                 blink_on = not blink_on
                 LED_RED.value(blink_on)
                 BUZZER.duty(512 if blink_on else 0)
                 BUZZER.freq(800 if blink_on else 500)
-            if time.ticks_diff(agora, t_estado) > 10000: 
-                tentativas = 0
-                mudar_estado(IDLE)
+            if time.ticks_diff(now, t_state) > 10000: 
+                attempts = 0
+                change_state(IDLE)
 
 run()
