@@ -3,7 +3,13 @@
   "author": "Jonathas Levi Pascoal Palmeira",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 80, "left": 160, "attrs": { "env": "micropython-20231227-v1.22.0" } },
+    {
+      "type": "board-esp32-devkit-c-v4",
+      "id": "esp",
+      "top": 80,
+      "left": 160,
+      "attrs": { "env": "micropython-20231227-v1.22.0" }
+    },
     {
       "type": "wokwi-led",
       "id": "led_green",
@@ -68,38 +74,32 @@
       "attrs": { "color": "orange", "label": "DEL" }
     },
     { "type": "wokwi-pir-motion-sensor", "id": "pir", "top": -120.8, "left": -84.18, "attrs": {} },
-    {
-      "type": "wokwi-ssd1306",
-      "id": "oled",
-      "top": -12.5,
-      "left": 443.5,
-      "attrs": {}
-    }
+    { "type": "wokwi-ssd1306", "id": "oled", "top": 217.9, "left": 462.7, "attrs": {} }
   ],
   "connections": [
-    [ "esp:D2", "led_green:A", "green", [] ],
+    [ "esp:2", "led_green:A", "green", [] ],
     [ "led_green:C", "esp:GND.1", "black", [] ],
-    [ "esp:D4", "led_red:A", "red", [] ],
+    [ "esp:4", "led_red:A", "red", [] ],
     [ "led_red:C", "esp:GND.1", "black", [] ],
-    [ "esp:D5", "led_yellow:A", "yellow", [] ],
+    [ "esp:5", "led_yellow:A", "yellow", [] ],
     [ "led_yellow:C", "esp:GND.1", "black", [] ],
-    [ "esp:D18", "buzzer:1", "purple", [] ],
+    [ "esp:18", "buzzer:1", "purple", [] ],
     [ "buzzer:2", "esp:GND.2", "black", [] ],
-    [ "esp:D13", "btn1:1.l", "green", [] ],
+    [ "esp:13", "btn1:1.l", "green", [] ],
     [ "btn1:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:D12", "btn2:1.l", "green", [] ],
+    [ "esp:12", "btn2:1.l", "green", [] ],
     [ "btn2:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:D14", "btn3:1.l", "green", [] ],
+    [ "esp:14", "btn3:1.l", "green", [] ],
     [ "btn3:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:D27", "btn4:1.l", "green", [] ],
+    [ "esp:27", "btn4:1.l", "green", [] ],
     [ "btn4:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:D26", "btn5:1.l", "orange", [] ],
+    [ "esp:26", "btn5:1.l", "orange", [] ],
     [ "btn5:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:D15", "pir:OUT", "yellow", [ "h0" ] ],
+    [ "esp:15", "pir:OUT", "yellow", [ "h0" ] ],
     [ "pir:VCC", "esp:3V3", "red", [ "v0" ] ],
     [ "pir:GND", "esp:GND.1", "black", [ "v0" ] ],
-    [ "esp:D22", "oled:CLK", "cyan", [ "h0" ] ],
-    [ "esp:D21", "oled:DATA", "cyan", [ "h0" ] ],
+    [ "esp:22", "oled:CLK", "cyan", [ "h0" ] ],
+    [ "esp:21", "oled:DATA", "cyan", [ "h0" ] ],
     [ "oled:VIN", "esp:3V3", "red", [ "v0" ] ],
     [ "oled:GND", "esp:GND.1", "black", [ "h-153.4", "v112.02" ] ]
   ],
