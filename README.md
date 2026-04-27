@@ -161,20 +161,24 @@ O sistema roda perfeitamente sem gargalos.
 *(Abaixo estão os registros do funcionamento do projeto testando todos os casos de uso)*
 
 ### 📸 Circuito Montado
-![Foto da Placa](assets/circuito.png)
+<img width="1358" height="684" alt="circuito" src="https://github.com/user-attachments/assets/72bafe9d-ca60-4f3a-85f1-09529f361cb7" />
 
 ### ✅ Teste de Sucesso (Acesso Liberado)
-<video src="assets/acerto_de_senha.mp4" controls width="100%"></video>
+https://github.com/user-attachments/assets/70102a89-6b30-4a16-b469-ef20a1569cf5
+
 
 ### ❌ Teste de Falha (Alarme Disparado)
-<video src="assets/erro_de_senha.mp4" controls width="100%"></video>
+https://github.com/user-attachments/assets/4b63cd0d-3f16-4caa-b5c9-220fb2f42409
+
 
 
 ### 🚨 Teste de Alarme (3 Erros e Bipe Contínuo)
-<video src="assets/erro_triplo_de_senha_bloqueio.mp4" controls width="100%"></video>
+https://github.com/user-attachments/assets/80cc9d1f-b926-48db-88fa-d04566b239d7
+
 
 ### 🔄 Teste de Troca de Senha (Autenticação e Gravação NVS)
-<video src="assets/redefinir_senha.mp4" controls width="100%"></video>
+https://github.com/user-attachments/assets/9e376da1-e0b3-4432-849c-5b0de4de75fd
+
 
 ---
 
