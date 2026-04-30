@@ -3,7 +3,7 @@
   "author": "Jonathas Levi Pascoal Palmeira",
   "editor": "wokwi",
   "parts": [
-    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 80, "left": 160, "attrs": {  } },
+    { "type": "board-esp32-devkit-c-v4", "id": "esp", "top": 80, "left": 160, "attrs": {} },
     {
       "type": "wokwi-led",
       "id": "led_green",
@@ -32,43 +32,15 @@
       "left": 299.4,
       "attrs": { "volume": "1000" }
     },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn1",
-      "top": 340,
-      "left": 0,
-      "attrs": { "color": "green", "label": "1" }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn2",
-      "top": 340,
-      "left": 80,
-      "attrs": { "color": "green", "label": "2" }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn3",
-      "top": 340,
-      "left": 160,
-      "attrs": { "color": "green", "label": "3" }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn4",
-      "top": 340,
-      "left": 240,
-      "attrs": { "color": "green", "label": "4" }
-    },
-    {
-      "type": "wokwi-pushbutton",
-      "id": "btn5",
-      "top": 340,
-      "left": 320,
-      "attrs": { "color": "orange", "label": "DEL" }
-    },
     { "type": "wokwi-pir-motion-sensor", "id": "pir", "top": -120.8, "left": -84.18, "attrs": {} },
-    { "type": "wokwi-ssd1306", "id": "oled", "top": 217.9, "left": 462.7, "attrs": {} }
+    { "type": "wokwi-ssd1306", "id": "oled", "top": 217.9, "left": 462.7, "attrs": {} },
+    {
+      "type": "wokwi-membrane-keypad",
+      "id": "keypad",
+      "top": 360,
+      "left": 130,
+      "attrs": {}
+    }
   ],
   "connections": [
     [ "esp:2", "led_green:A", "green", [] ],
@@ -79,16 +51,6 @@
     [ "led_yellow:C", "esp:GND.1", "black", [] ],
     [ "esp:18", "buzzer:1", "purple", [] ],
     [ "buzzer:2", "esp:GND.2", "black", [] ],
-    [ "esp:13", "btn1:1.l", "green", [] ],
-    [ "btn1:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:12", "btn2:1.l", "green", [] ],
-    [ "btn2:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:14", "btn3:1.l", "green", [] ],
-    [ "btn3:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:27", "btn4:1.l", "green", [] ],
-    [ "btn4:2.l", "esp:GND.2", "black", [] ],
-    [ "esp:26", "btn5:1.l", "orange", [] ],
-    [ "btn5:2.l", "esp:GND.2", "black", [] ],
     [ "esp:15", "pir:OUT", "yellow", [ "h0" ] ],
     [ "pir:VCC", "esp:3V3", "red", [ "v0" ] ],
     [ "pir:GND", "esp:GND.1", "black", [ "v0" ] ],
@@ -96,6 +58,14 @@
     [ "esp:21", "oled:DATA", "cyan", [ "h0" ] ],
     [ "oled:VIN", "esp:3V3", "red", [ "v0" ] ],
     [ "oled:GND", "esp:GND.1", "black", [ "h-153.4", "v112.02" ] ],
+    [ "esp:13", "keypad:R1", "green", [ "v0" ] ],
+    [ "esp:12", "keypad:R2", "green", [ "v0" ] ],
+    [ "esp:14", "keypad:R3", "green", [ "v0" ] ],
+    [ "esp:27", "keypad:R4", "green", [ "v0" ] ],
+    [ "esp:26", "keypad:C1", "blue", [ "v0" ] ],
+    [ "esp:25", "keypad:C2", "blue", [ "v0" ] ],
+    [ "esp:33", "keypad:C3", "blue", [ "v0" ] ],
+    [ "esp:32", "keypad:C4", "blue", [ "v0" ] ],
     [ "esp:TX", "$serialMonitor:RX", "", [] ],
     [ "esp:RX", "$serialMonitor:TX", "", [] ]
   ],
