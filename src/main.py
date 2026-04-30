@@ -1,17 +1,43 @@
 import time
 import sys
-
-
+import json
+import network
+import ntptime
 from machine import Pin, PWM, SoftI2C
 import ssd1306
-import json
 
-
-# 1. Feedback imediato para o GitHub Actions
+# Feedback imediato para o CI
 print("Teste") 
 time.sleep(1) 
+
 # -------------------------------------------------------------
-# PERSISTÊNCIA (NVS - Non-Volatile Storage)
+# Internet e relógio (NTP)
+# -------------------------------------------------------------
+def connect_wifi():
+    print("Conectando ao Wi-Fi Wokwi-GUEST...")
+    wlan = network.WLAN(network.STA_IF)
+    wlan.active(True)
+    wlan.connect('Wokwi-GUEST', '') 
+    while not wlan.isconnected():
+        print(".", end="")
+        time.sleep(0.5)
+    print(f"\nConectado! IP: {wlan.ifconfig()[0]}")
+
+def sync_time():
+    try:
+        ntptime.host = "pool.ntp.org"
+        ntptime.settime()
+        print("Horário sincronizado com sucesso!")
+    except:
+        print("Erro ao sincronizar horário.")
+
+def get_formatted_time():
+    # O fuso do Brasil é UTC-3 (-10800 segundos)
+    t = time.localtime(time.time() - 10800)
+    return "{:02d}:{:02d}:{:02d}".format(t[3], t[4], t[5])
+
+# -------------------------------------------------------------
+# Persistência (NVS - Non-Volatile Storage)
 # -------------------------------------------------------------
 CONFIG_FILE = "config.json"
 
@@ -21,7 +47,8 @@ def load_password():
             data = json.load(f)
             return data["password"]
     except:
-        return [1, 3, 2, 4]
+        # A senha padrão usa strings (caracteres do teclado matricial)
+        return ['1', '3', '2', '4']
 
 def save_password(new_password):
     try:
@@ -31,7 +58,7 @@ def save_password(new_password):
         print(f"Erro ao salvar senha: {e}")
 
 # -------------------------------------------------------------
-# CONFIGURAÇÃO DE HARDWARE (DENTRO DE TRY PARA DEBUG)
+# Hardware: LEDs, Buzzer, PIR, OLED e Teclado Matricial
 # -------------------------------------------------------------
 try:
     LED_GREEN  = Pin(2,  Pin.OUT)
@@ -40,34 +67,41 @@ try:
     BUZZER     = PWM(Pin(18), freq=1000, duty=0)
     PIR        = Pin(15, Pin.IN)
 
-    # Usando SoftI2C
     i2c = SoftI2C(scl=Pin(22), sda=Pin(21))
-    
-    # SCAN I2C para debug: mostra no log se o display foi achado
-    print(f"Escaneando I2C... Dispositivos: {i2c.scan()}", flush=True)
-    
     oled = ssd1306.SSD1306_I2C(128, 64, i2c)
 except Exception as e:
     print("\n--- ERRO DE HARDWARE DETECTADO ---")
     sys.print_exception(e)
-    print("----------------------------------\n")
-    # Criamos um objeto "falso" para o oled não quebrar o resto do código
     class FakeOled:
         def fill(self, x): pass
-        def text(self, t, x, y): print(f"[OLED]: {t}")
+        def text(self, t, x, y): pass
         def show(self): pass
     oled = FakeOled()
 
-BUTTONS = {
-    1: Pin(13, Pin.IN, Pin.PULL_UP),
-    2: Pin(12, Pin.IN, Pin.PULL_UP),
-    3: Pin(14, Pin.IN, Pin.PULL_UP),
-    4: Pin(27, Pin.IN, Pin.PULL_UP),
-    5: Pin(26, Pin.IN, Pin.PULL_UP)
-}
+# Configuração do Teclado Matricial
+ROWS = [Pin(p, Pin.OUT) for p in [13, 12, 14, 27]]
+COLS = [Pin(p, Pin.IN, Pin.PULL_UP) for p in [26, 25, 33, 32]]
+
+KEYS = [
+    ['1', '2', '3', 'A'],
+    ['4', '5', '6', 'B'],
+    ['7', '8', '9', 'C'],
+    ['*', '0', '#', 'D']
+]
+
+def read_keypad():
+    """Varre a matriz e retorna a tecla pressionada ou None"""
+    for i, row in enumerate(ROWS):
+        row.value(0) # Ativa a linha (LOW)
+        for j, col in enumerate(COLS):
+            if col.value() == 0: # Verifica se a coluna foi puxada para LOW
+                row.value(1) # Desativa a linha antes de retornar
+                return KEYS[i][j]
+        row.value(1) # Desativa a linha
+    return None
 
 # -------------------------------------------------------------
-# ESTADOS E LÓGICA (O restante permanece igual)
+# ESTADOS E LÓGICA DO COFRE
 # -------------------------------------------------------------
 STANDBY, IDLE, ENTERING = "STANDBY", "IDLE", "ENTERING"
 GRANTED, DENIED, ALARM = "GRANTED", "DENIED", "ALARM"
@@ -78,8 +112,10 @@ state = STANDBY
 input_code, attempts = [], 0
 t_state, t_interaction, t_blink = 0, 0, 0
 blink_on = False
-t_debounce = {1:0, 2:0, 3:0, 4:0, 5:0}
+last_key = None
+t_last_press = 0
 t_long_press = 0
+last_clock_update = 0
 
 def update_oled(line1, line2=""):
     oled.fill(0)
@@ -106,40 +142,60 @@ def change_state(new_state):
     except: pass
     input_code = []
     
-    if new_state == STANDBY: update_oled("MODO ECONOMIA", "PIR ATIVO...")
+    if new_state == STANDBY: update_oled("MODO ECONOMIA", get_formatted_time())
     elif new_state == IDLE: update_oled("SISTEMA PRONTO", "DIGITE A SENHA")
     elif new_state == AUTH_CHANGE: update_oled("SENHA ANTIGA:", "PARA LIBERAR")
     elif new_state == SET_PWD: update_oled("MODO CONFIG", "NOVA SENHA:")
+    elif new_state == GRANTED: update_oled("ACESSO OK", "BEM-VINDO")
+    elif new_state == ALARM: update_oled("ALARME!", "COFRE BLOQUEADO")
 
 def run():
-    global state, input_code, attempts, t_blink, blink_on, t_interaction, current_password, t_long_press
+    global state, input_code, attempts, t_blink, blink_on, t_interaction
+    global current_password, t_long_press, last_clock_update, last_key, t_last_press
+    
+    # Inicia a conexão de internet e pega a hora antes do loop
+    connect_wifi()
+    sync_time()
+    
     change_state(STANDBY)
     
     while True:
         try:
             now = time.ticks_ms()
+            
+            # --- LEITURA DO TECLADO COM DEBOUNCE ---
+            current_key = read_keypad()
             btn_pressed = None
-            for num, btn in BUTTONS.items():
-                if btn.value() == 0:
-                    if time.ticks_diff(now, t_debounce[num]) > 250:
-                        t_debounce[num] = now
-                        btn_pressed = num
+            
+            if current_key is not None:
+                if current_key != last_key: # Nova tecla pressionada
+                    if time.ticks_diff(now, t_last_press) > 150: # Debounce
+                        btn_pressed = current_key
+                        last_key = current_key
+                        t_last_press = now
                         t_interaction = now
-                        break
+            else:
+                last_key = None # Tecla foi solta
 
+            # --- LÓGICA DE ESTADOS ---
             if state == STANDBY:
-                if PIR.value(): change_state(IDLE)
+                if time.ticks_diff(now, last_clock_update) > 1000:
+                    update_oled("MODO ECONOMIA", f"Hora: {get_formatted_time()}")
+                    last_clock_update = now
+                if PIR.value() or btn_pressed: change_state(IDLE)
+                
             elif state == IDLE:
-                if BUTTONS[5].value() == 0:
+                # Detecção de Long Press na tecla '#' para trocar a senha
+                if current_key == '#':
                     if t_long_press == 0: t_long_press = now
                     elif time.ticks_diff(now, t_long_press) > 3000:
                         t_long_press = 0
                         change_state(AUTH_CHANGE)
-                        while BUTTONS[5].value() == 0: time.sleep_ms(10)
-                        t_debounce[5] = time.ticks_ms()
-                else: t_long_press = 0
+                        while read_keypad() == '#': time.sleep_ms(10) # Espera soltar o botão
+                else: 
+                    t_long_press = 0
 
-                if btn_pressed and btn_pressed != 5:
+                if btn_pressed and btn_pressed not in ['#', '*']:
                     input_code.append(btn_pressed)
                     beep()
                     change_state(ENTERING)
@@ -148,9 +204,11 @@ def run():
             elif state == ENTERING:
                 update_oled("SENHA:", "*" * len(input_code))
                 if btn_pressed:
-                    if btn_pressed == 5:
+                    if btn_pressed == '*': # Tecla de Apagar (DEL)
                         if len(input_code) > 0: input_code.pop(); beep(600, 50)
                         else: change_state(IDLE)
+                    elif btn_pressed == '#': # Cancela tudo e volta
+                        change_state(IDLE)
                     else:
                         input_code.append(btn_pressed)
                         beep()
@@ -163,9 +221,11 @@ def run():
             elif state == AUTH_CHANGE:
                 update_oled("SENHA ANTIGA:", "*" * len(input_code))
                 if btn_pressed:
-                    if btn_pressed == 5:
+                    if btn_pressed == '*':
                         if len(input_code) > 0: input_code.pop()
                         else: change_state(IDLE)
+                    elif btn_pressed == '#':
+                        change_state(IDLE)
                     else:
                         input_code.append(btn_pressed)
                         if len(input_code) == 4:
@@ -175,7 +235,7 @@ def run():
             elif state == SET_PWD:
                 update_oled("NOVA SENHA:", "*" * len(input_code))
                 if btn_pressed:
-                    if btn_pressed == 5: change_state(IDLE)
+                    if btn_pressed == '#' or btn_pressed == '*': change_state(IDLE)
                     else:
                         input_code.append(btn_pressed)
                         if len(input_code) == 4:
@@ -186,7 +246,6 @@ def run():
 
             elif state == GRANTED:
                 LED_GREEN.on()
-                update_oled("ACESSO OK", "BEM-VINDO")
                 if time.ticks_diff(now, t_state) > 3000: change_state(IDLE)
 
             elif state == DENIED:
@@ -195,7 +254,6 @@ def run():
                 if time.ticks_diff(now, t_state) > 2000: change_state(IDLE)
 
             elif state == ALARM:
-                update_oled("ALARME!", "COFRE BLOQUEADO")
                 if time.ticks_diff(now, t_blink) > 150:
                     t_blink = now
                     blink_on = not blink_on
@@ -206,6 +264,7 @@ def run():
                     except: pass
                 if time.ticks_diff(now, t_state) > 10000: 
                     attempts = 0; change_state(IDLE)
+                    
         except Exception as e:
             print(f"Erro no loop principal: {e}")
             time.sleep(1)
