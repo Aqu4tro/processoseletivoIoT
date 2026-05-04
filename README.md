@@ -1,22 +1,14 @@
 # Processo Seletivo – Intensivo Maker | IoT
 ## Etapa Prática – Sistemas Embarcados Avançados
 
-
 # 🔐 Cofre Inteligente IoT com Gestão de Energia e Memória
-
-
 
 ## 👤 Identificação do Candidato
 
-
- - **Nome completo:**  _Jonathas Levi Pascoal Palmeira_ 
-- **GitHub:**  _https://github.com/Aqu4tro_ 
-
+ - **Nome completo:** _Jonathas Levi Pascoal Palmeira_ 
+ - **GitHub:** _https://github.com/Aqu4tro_ 
 
 ---
-
-
-## 1️⃣ Visão Geral da Solução
 
 ## 1️⃣ Visão Geral da Solução
 
@@ -27,12 +19,9 @@ Embora o escopo principal seja a simulação de um **cofre inteligente**, a arqu
 * Painéis de alarme de segurança patrimonial integrados com smartphones.
 * Intertravamento de máquinas industriais.
 
-O sistema evoluiu de um simples teclado de senhas para uma solução completa de IoT focada em segurança. Ele aguarda em modo de baixo consumo (Standby) até detectar presença. Ao ser ativado, o usuário interage através de um Display OLED.
+O sistema evoluiu de um simples teclado de botões para uma solução completa de IoT focada em segurança. Ele aguarda em modo de baixo consumo (Standby) até detectar presença. Ao ser ativado, o usuário interage através de um Display OLED e um teclado matricial.
 
-**Diferenciais de Segurança:** 
-
-1. **IoT e Alertas em Tempo Real:** Conectado via Wi-Fi, o cofre envia notificações instantâneas com data e hora para o celular do proprietário via **Telegram** sempre que for aberto, bloqueado ou tiver a senha alterada.
-
+**Diferenciais de Segurança:** 1. **IoT e Alertas em Tempo Real:** Conectado via Wi-Fi, o cofre envia notificações instantâneas com data e hora para o celular do proprietário via **Telegram** sempre que for aberto, bloqueado ou tiver a senha alterada.
 2. **Sistema Anti-Reboot:** A quantidade de tentativas erradas, o estado de bloqueio (alarme) e a senha são salvos na memória Flash (`config.json`). Isso impede que um invasor burle o bloqueio de tempo simplesmente tirando o cofre da tomada.
 
 ---
@@ -63,8 +52,8 @@ stateDiagram-v2
     SB --> ID: PIR Detecta Mov.
     ID --> SB: Inativo (15s)
 
-    ID --> EN: Botão 1-4
-    EN --> ID: B5 vazio (Cancel)
+    ID --> EN: Tecla Numérica (0-9)
+    EN --> ID: Tecla # (Cancel)
 
     EN --> GR: Senha OK
     EN --> DE: Senha Errada (<3 tentativas)
@@ -74,12 +63,12 @@ stateDiagram-v2
     GR --> ID: Timeout (3s)
     AL --> ID: Timeout (10s)
 
-    ID --> AU: Setup (Segura B5 3s)
-    AU --> ID: B5 vazio (Cancel)
+    ID --> AU: Setup (Segura # 3s)
+    AU --> ID: Tecla # (Cancel)
     AU --> SE: Senha Antiga OK
     AU --> DE: Senha Antiga Errada
 
-    SE --> ID: Salva/Cancela (B5)
+    SE --> ID: Tecla # ou * (Cancela/Volta)
 ```
 
 
@@ -87,7 +76,7 @@ stateDiagram-v2
 1. Inicializa pinos, barramento I2C, e carrega o estado de segurança e a senha do `config.json` na memória.
 2. Conecta à rede Wi-Fi e sincroniza o relógio interno via servidor NTP (horário de Brasília UTC-3).
 3. Entra no `while True` do loop principal.
-4. Lê o tempo atual (`time.ticks_ms()`) e verifica o sensor PIR e os botões (com debounce e detecção de *long press*).
+4. Lê o tempo atual (`time.ticks_ms()`) e verifica o sensor PIR e a varredura do teclado matricial (com debounce e detecção de *long press*).
 5. Executa o bloco do estado atual: atualiza o Display OLED, manipula LEDs, Buzzer e envia requisições HTTPS via API do Telegram quando necessário.
 6. Chama a função `change_state()` para resetar variáveis de controle na transição de telas.
 
@@ -97,8 +86,6 @@ stateDiagram-v2
 
 ## 3️⃣ Componentes Utilizados na Simulação
 
-
-```markdown
 | Componente | Qtd | Pinos (ESP32) | Função |
 |---|---|---|---|
 | ESP32 DevKit V1 | 1 | — | Microcontrolador principal (MicroPython) |
@@ -108,12 +95,7 @@ stateDiagram-v2
 | LED Vermelho | 1 | GPIO 4 | Indica senha errada ou alarme ativo |
 | LED Amarelo | 1 | GPIO 5 | Indica modo de configuração ativo |
 | Buzzer Piezo | 1 | GPIO 18 | Feedback sonoro via PWM (bipes e sirene) |
-| Botão 1 | 1 | GPIO 13 | Dígito 1 da senha |
-| Botão 2 | 1 | GPIO 12 | Dígito 2 da senha |
-| Botão 3 | 1 | GPIO 14 | Dígito 3 da senha |
-| Botão 4 | 1 | GPIO 27 | Dígito 4 da senha |
-| Botão 5 | 1 | GPIO 26 | **NOVO:** Função Backspace (Apagar), Voltar/Cancelar e Configuração de Senha (Long Press) |
-```
+| Teclado Matricial 4x4 | 1 | **Linhas:** 13, 12, 14, 27 <br> **Colunas:** 26, 25, 33, 32 | Entrada de senhas e comandos especiais (`*` Apaga, `#` Cancela/Configura) |
 
 
 ---
@@ -124,9 +106,9 @@ stateDiagram-v2
 * **Driver Local (`ssd1306.py`):** Optou-se por criar/incluir o arquivo `ssd1306.py` diretamente no projeto em vez de depender de gerenciadores de pacotes (como `mip` ou `upip`). Isso garante total portabilidade, assegurando que o código rode perfeitamente offline, em simuladores como o Wokwi, ou em placas físicas recém-formatadas sem depender de conexão com a internet para baixar dependências do display.
 * **Persistência de Dados (NVS):** O uso do módulo `json` para ler e gravar a senha no sistema de arquivos Flash simula requisitos reais da indústria para armazenamento não-volátil.
 * **Segurança de Configuração (AUTH_CHANGE):** Para impedir que pessoas não autorizadas redefinam a senha, o sistema agora exige a autenticação da senha antiga antes de liberar a gravação de uma nova.
-* **UX Melhorada (Backspace / Cancel):** Implementação de um 5º botão com dupla função contextual. Se há dígitos digitados, ele apaga o último caractere. Se o campo está vazio, ele atua como "Cancelar", abortando a operação e voltando ao estado inicial com segurança.
+* **UX Melhorada (Teclado Matricial):** Implementação da matriz 4x4 com teclas de dupla função contextual. A tecla `*` (Asterisco) apaga o último caractere caso haja erro de digitação. A tecla `#` (Sustenido) atua como "Cancelar", abortando a operação e voltando ao estado inicial com segurança.
 * **Power Management (Standby):** Adição de um estado inicial de economia de energia. A interface só liga quando o sensor PIR detecta movimento.
-* **Detecção de Long Press e Prevenção de Bug:** O Botão 5 executa dupla função. Segurar por 3 segundos aciona a rotina de alteração de senha. Foi implementada uma trava de software (loop de espera) para garantir que o sistema não leia a soltura do botão como um cancelamento involuntário logo após mudar de tela.
+* **Detecção de Long Press e Prevenção de Bug:** A tecla `#` executa dupla função. Segurar por 3 segundos aciona a rotina de alteração de senha. Foi implementada uma trava de software (loop de espera) na varredura matricial para garantir que o sistema não leia a soltura do botão como um cancelamento involuntário logo após mudar de tela.
 * **Integração IoT via API do Telegram (`requests`):** Uso da biblioteca moderna `requests` do MicroPython para realizar chamadas HTTPS diretas à API do Telegram, garantindo que o proprietário seja notificado remotamente sem depender de servidores intermediários ou brokers MQTT.
 * **Sistema Anti-Reboot (Persistência Avançada):** O módulo `json` não salva apenas a senha, mas também o número de tentativas falhas e o status de bloqueio. Se o alarme disparar e a energia for cortada, o ESP32 voltará ligado diretamente no estado de ALARME, garantindo a integridade do bloqueio.
 * **Sincronização de Tempo (NTP):** Implementação da biblioteca `ntptime` para buscar a hora real da internet. O cálculo de fuso horário (-10800 segundos para UTC-3) foi implementado manualmente para garantir timestamps precisos nos logs do Telegram e na tela de economia de energia.
@@ -160,6 +142,7 @@ Antes de dar "Play" na simulação, **caso queira testar com o Telegram**, você
    * Se acertar, ele pede a **NOVA SENHA**. Digite 4 botões de sua escolha. A nova senha será persistida na memória Flash e **o Telegram avisará:** *"Senha alterada com sucesso em: [Data e Hora]"*.
 5. **Testar o Alarme e Anti-Reboot:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente, a sirene vai tocar e **o Telegram receberá um:** *"ALERTA: Tentativa de invasão!"*. 
    * *Teste Especial (Anti-Reboot):* Com o alarme tocando, vamos simular uma queda de energia abrupta. **Clique dentro da tela preta do terminal e aperte `Ctrl + C`** para interromper a execução (você verá as setinhas `>>>` aparecerem). Em seguida, **aperte `Ctrl + D`** para forçar o Soft Reboot. Não use o botão de Stop/Play do simulador, pois ele formata a memória virtual do Wokwi. O cofre reiniciará, lerá a memória não-volátil (NVS) e ligará diretamente no modo de bloqueio apitando!
+     
 ---
 
 
@@ -182,24 +165,28 @@ O sistema roda perfeitamente de forma responsiva, com a FSM gerenciando o hardwa
 *(Abaixo estão os registros do funcionamento do projeto testando todos os casos de uso)*
 
 ### 📸 Circuito Montado
-<img width="1365" height="685" alt="Captura de tela de 2026-04-27 02-21-59" src="https://github.com/user-attachments/assets/c3630afe-f5c0-4f09-ba11-4cd2223f860d" />
+<img width="1914" height="823" alt="Screenshot from 2026-05-04 11-18-10" src="https://github.com/user-attachments/assets/ad554375-6485-44b0-bbed-4c04f375caff" />
+
 
 
 ### ✅ Teste de Sucesso (Acesso Liberado)
-[Gravação de tela de 2026-04-27 02-21-00.webm](https://github.com/user-attachments/assets/74a3f0cc-6340-4a2e-82e3-6ba0e422fb69)
+[Screencast from 2026-05-04 11-43-49.webm](https://github.com/user-attachments/assets/dac87438-dde2-43ef-9d1d-610b760a063c)
+
 
 
 ### ❌ Teste de Falha (Alarme Disparado)
-[Gravação de tela de 2026-04-27 02-21-43.webm](https://github.com/user-attachments/assets/54d15568-ede4-4bd9-be4a-445d807640e9)
+[Screencast from 2026-05-04 11-55-25.webm](https://github.com/user-attachments/assets/c026c2bd-1bb0-49f4-888b-dbf668f338cf)
 
 
 
 ### 🚨 Teste de Alarme (3 Erros e Bipe Contínuo)
-[Gravação de tela de 2026-04-27 02-22-08.webm](https://github.com/user-attachments/assets/785e6b1c-3e2a-4974-a448-7bfe60413ed4)
+[Screencast from 2026-05-04 11-55-59.webm](https://github.com/user-attachments/assets/d9a9f027-d97b-4bda-9d69-222c585c096c)
+
 
 
 ### 🔄 Teste de Troca de Senha (Autenticação e Gravação NVS)
-[Gravação de tela de 2026-04-27 02-22-44.webm](https://github.com/user-attachments/assets/35ee330b-0c0c-4517-855f-7051c65115d2)
+[Screencast from 2026-05-04 11-54-31.webm](https://github.com/user-attachments/assets/01f85f7d-c19b-4329-bd54-d1d9dc1c7633)
+
 
 
 ---
