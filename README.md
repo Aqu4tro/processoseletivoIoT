@@ -5,6 +5,7 @@
 # 🔐 Cofre Inteligente IoT com Gestão de Energia e Memória
 
 
+
 ## 👤 Identificação do Candidato
 
 
@@ -17,16 +18,22 @@
 
 ## 1️⃣ Visão Geral da Solução
 
+## 1️⃣ Visão Geral da Solução
+
 Este projeto implementa um **sistema de controle de acesso avançado** simulado em hardware virtual (ESP32 via Wokwi). 
 
-Embora o escopo principal seja a simulação de um **cofre inteligente**, a arquitetura de firmware desenvolvida aqui é altamente abrangente. Por utilizar uma gestão eficiente de estados, interface humana-máquina (HMI) e persistência de dados, o mesmo código base pode ser facilmente adaptado para outros cenários do mundo real, tais como:
+Embora o escopo principal seja a simulação de um **cofre inteligente**, a arquitetura de firmware desenvolvida aqui é altamente abrangente. Por utilizar uma gestão eficiente de estados, interface humana-máquina (HMI), persistência de dados e conectividade em nuvem, o mesmo código base pode ser facilmente adaptado para outros cenários do mundo real, tais como:
 * Fechaduras eletrônicas residenciais ou de hotelaria.
-* Painéis de alarme de segurança patrimonial.
-* Intertravamento de máquinas industriais (exigindo senha de operador para ligar).
+* Painéis de alarme de segurança patrimonial integrados com smartphones.
+* Intertravamento de máquinas industriais.
 
-O sistema evoluiu de um simples teclado de senhas para uma solução completa de IoT focada em eficiência. Ele aguarda em modo de baixo consumo (Standby) até detectar presença. Ao ser ativado, o usuário interage através de um Display OLED e insere a senha. Se correta, o acesso é liberado; em caso de múltiplas falhas, um alarme é disparado.
+O sistema evoluiu de um simples teclado de senhas para uma solução completa de IoT focada em segurança. Ele aguarda em modo de baixo consumo (Standby) até detectar presença. Ao ser ativado, o usuário interage através de um Display OLED.
 
-**Diferencial:** A senha configurada pelo usuário é salva na memória Flash do microcontrolador, sobrevivendo a reinicializações (quedas de energia).
+**Diferenciais de Segurança:** 
+
+1. **IoT e Alertas em Tempo Real:** Conectado via Wi-Fi, o cofre envia notificações instantâneas com data e hora para o celular do proprietário via **Telegram** sempre que for aberto, bloqueado ou tiver a senha alterada.
+
+2. **Sistema Anti-Reboot:** A quantidade de tentativas erradas, o estado de bloqueio (alarme) e a senha são salvos na memória Flash (`config.json`). Isso impede que um invasor burle o bloqueio de tempo simplesmente tirando o cofre da tomada.
 
 ---
 
@@ -77,11 +84,12 @@ stateDiagram-v2
 
 
 ### Fluxo do `main.py`
-1. Inicializa pinos, barramento I2C, e tenta ler o `config.json` na memória.
-2. Entra no `while True` do loop principal.
-3. Lê o tempo atual (`time.ticks_ms()`) e verifica o sensor PIR e os botões (com debounce e detecção de *long press*).
-4. Executa o bloco do estado atual: atualiza o Display OLED, manipula os LEDs e o PWM do Buzzer.
-5. Chama a função `mudar_estado()` para resetar variáveis de controle na transição de estados.
+1. Inicializa pinos, barramento I2C, e carrega o estado de segurança e a senha do `config.json` na memória.
+2. Conecta à rede Wi-Fi e sincroniza o relógio interno via servidor NTP (horário de Brasília UTC-3).
+3. Entra no `while True` do loop principal.
+4. Lê o tempo atual (`time.ticks_ms()`) e verifica o sensor PIR e os botões (com debounce e detecção de *long press*).
+5. Executa o bloco do estado atual: atualiza o Display OLED, manipula LEDs, Buzzer e envia requisições HTTPS via API do Telegram quando necessário.
+6. Chama a função `change_state()` para resetar variáveis de controle na transição de telas.
 
 
 ---
@@ -119,38 +127,52 @@ stateDiagram-v2
 * **UX Melhorada (Backspace / Cancel):** Implementação de um 5º botão com dupla função contextual. Se há dígitos digitados, ele apaga o último caractere. Se o campo está vazio, ele atua como "Cancelar", abortando a operação e voltando ao estado inicial com segurança.
 * **Power Management (Standby):** Adição de um estado inicial de economia de energia. A interface só liga quando o sensor PIR detecta movimento.
 * **Detecção de Long Press e Prevenção de Bug:** O Botão 5 executa dupla função. Segurar por 3 segundos aciona a rotina de alteração de senha. Foi implementada uma trava de software (loop de espera) para garantir que o sistema não leia a soltura do botão como um cancelamento involuntário logo após mudar de tela.
+* **Integração IoT via API do Telegram (`requests`):** Uso da biblioteca moderna `requests` do MicroPython para realizar chamadas HTTPS diretas à API do Telegram, garantindo que o proprietário seja notificado remotamente sem depender de servidores intermediários ou brokers MQTT.
+* **Sistema Anti-Reboot (Persistência Avançada):** O módulo `json` não salva apenas a senha, mas também o número de tentativas falhas e o status de bloqueio. Se o alarme disparar e a energia for cortada, o ESP32 voltará ligado diretamente no estado de ALARME, garantindo a integridade do bloqueio.
+* **Sincronização de Tempo (NTP):** Implementação da biblioteca `ntptime` para buscar a hora real da internet. O cálculo de fuso horário (-10800 segundos para UTC-3) foi implementado manualmente para garantir timestamps precisos nos logs do Telegram e na tela de economia de energia.
 
 ---
 
 
 ## 5️⃣ Como Testar no Simulador (Tutorial)
 
-Para avaliar todas as funcionalidades do protótipo no Wokwi, siga este passo a passo:
+Para avaliar todas as funcionalidades do protótipo no Wokwi e testar a integração IoT, siga este passo a passo:
 
 > 🔑 **Senha Padrão de Fábrica:** `1 - 3 - 2 - 4`
 
-1. **Acordar o Sistema:** O código inicia em modo `STANDBY`. Clique no sensor **PIR** e selecione *"Simulate motion"* para o sistema ligar a tela e ir para o estado `IDLE`.
-2. **Testar o Backspace (Botão 5):** Comece a digitar uma senha. Aperte o **Botão 5** para ver o sistema apagar o último dígito tocando um bipe grave. Se você apertar o Botão 5 com a tela vazia, ele cancela a ação.
-3. **Acesso Bem-sucedido:** Digite a senha padrão correta: **B1, B3, B2, B4**. O LED verde acenderá com uma mensagem de boas-vindas e um bipe de sucesso será emitido.
-4. **Alterar a Senha com Segurança:** No modo `IDLE`, **clique e segure o Botão 5 por cerca de 3 segundos**. 
-   * *O sistema pedirá a senha antiga primeiro.* Digite `1-3-2-4`.
-   * *Se acertar*, o LED Amarelo pisca com um bipe e ele pede a **NOVA SENHA**. Digite 4 botões de sua escolha. A nova senha será persistida na memória flash e o sistema confirmará o sucesso!
-5. **Testar o Alarme:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente, a tela exibirá a mensagem de bloqueio e o Buzzer emitirá um som de sirene contínua, bloqueando o sistema temporariamente por 10 segundos.
+### Pré-requisito: Configurando as Notificações (Opcional)
+
+Antes de dar "Play" na simulação, **caso queira testar com o Telegram**, você precisará configurar o seu robô mensageiro. Caso nunca tenha feito isso, consulte o [Tutorial Oficial do Telegram](https://core.telegram.org/bots/tutorial) ou siga este resumo prático:
+1. No Telegram, busque por **`@BotFather`**, crie um bot enviando o comando `/newbot` e copie o **Token da API**.
+2. Busque por **`@userinfobot`** para descobrir o seu **Chat ID** (apenas números).
+3. 🚨 **Crucial:** Abra a conversa com o seu novo bot recém-criado e envie **`/start`** para autorizar o recebimento de mensagens.
+4. No arquivo `main.py`, cole o seu Token e o seu Chat ID nas variáveis `BOT_TOKEN` e `CHAT_ID`.
+
+*(Nota: Se você não quiser testar as notificações agora, basta rodar o código normalmente. O cofre funcionará perfeitamente e você pode apenas ignorar as mensagens de erro de envio no terminal).*
+
+### Passo a Passo da Simulação
+
+1. **Acordar o Sistema:** O código inicia em modo `STANDBY`. Clique no sensor **PIR** e selecione *"Simulate motion"*. O sistema ligará a tela, conectará no Wi-Fi, sincronizará o relógio na internet e irá para o estado `IDLE`.
+2. **Testar o Backspace e Cancelar:** Comece a digitar uma senha. Aperte a tecla **`*` (Asterisco)** para ver o sistema apagar o último dígito tocando um bipe grave. Se quiser abortar a digitação a qualquer momento, aperte a tecla **`#` (Sustenido)** e ele atuará como "Cancelar".
+3. **Acesso Bem-sucedido:** Digite a senha correta (Padrão: **1, 3, 2, 4**). O LED verde acenderá com uma mensagem de boas-vindas e **o seu Telegram receberá a notificação:** *"Cofre Aberto em: [Data e Hora]"*.
+4. **Alterar a Senha com Segurança:** No modo `IDLE`, **clique e segure a tecla `#` (Sustenido) por cerca de 3 segundos**. 
+   * O sistema pedirá a senha antiga (`1-3-2-4`).
+   * Se acertar, ele pede a **NOVA SENHA**. Digite 4 botões de sua escolha. A nova senha será persistida na memória Flash e **o Telegram avisará:** *"Senha alterada com sucesso em: [Data e Hora]"*.
+5. **Testar o Alarme e Anti-Reboot:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente, a sirene vai tocar e **o Telegram receberá um:** *"ALERTA: Tentativa de invasão!"*. 
+   * *Teste Especial:* Pare a simulação do Wokwi no meio do alarme e dê "Play" novamente. O cofre já vai ligar direto no modo de bloqueio apitando, provando que a memória Anti-Reboot funciona!
 
 ---
 
 
 ## 6️⃣ Resultados Obtidos
 
+O sistema roda perfeitamente de forma responsiva, com a FSM gerenciando o hardware e as requisições de rede sem travar a interface.
 
-O sistema roda perfeitamente sem gargalos.
-
-
-- **STANDBY:** Tela exibe "MODO ECONOMIA", aguardando o PIR.
+- **STANDBY:** Tela exibe "MODO ECONOMIA" e a hora atualizada, aguardando o PIR.
 - **IDLE / ENTERING:** OLED exibe asteriscos `*` à medida que a senha é digitada.
-- **SET_PWD:** LED amarelo acende, indicando gravação de nova senha.
-- **Sucesso:** Tela exibe "ACESSO OK", LED verde acende, e som de liberação toca.
-- **Alarme:** Após 3 erros, a tela exibe alerta, LED vermelho pisca rapidamente e o Buzzer alterna frequências simulando uma sirene de polícia.
+- **SET_PWD:** LED amarelo acende, indicando gravação de nova senha. Ao confirmar, envia notificação no celular e salva na Flash.
+- **Sucesso:** Tela exibe "ACESSO OK", LED verde acende, zera as tentativas na memória e dispara uma notificação via Telegram: *"Cofre Aberto em: DD/MM/AAAA HH:MM:SS"*.
+- **Alarme:** Após 3 erros, a tela exibe alerta, grava o bloqueio na Flash, LED vermelho pisca e o Buzzer simula uma sirene. O proprietário recebe imediatamente o alerta no smartphone.
 
 
 ---
@@ -186,12 +208,11 @@ O sistema roda perfeitamente sem gargalos.
 
 ## 8️⃣ Comentários Adicionais
 
-
 ### Limitações e Melhorias Futuras
-- **Wi-Fi e MQTT:** Como próximo passo lógico para um sistema ESP32, planejo integrar o protocolo MQTT para enviar alertas em tempo real ("Invasão Detectada" ou "Cofre Aberto") para um *broker* na nuvem.
-- **Criptografia:** Atualmente o `config.json` salva a senha em texto plano. Em produção, seria necessário aplicar um *hash* (como SHA-256) antes de armazenar os dados na Flash.
-
+- **Criptografia:** Atualmente o `config.json` salva a senha e os estados em texto plano. Em produção, seria necessário aplicar um *hash* (como SHA-256) na senha antes de armazená-la na Flash, garantindo que nem mesmo quem tenha acesso físico ao chip consiga ler o código.
+- **Backup de Bateria (RTC e UPS):** Adicionar um módulo RTC (Real Time Clock) físico como o DS3231 e um sistema de bateria Lipo para manter o sistema online e disparando alertas no Telegram mesmo em caso de corte de energia da rede principal.
 
 ### Aprendizados
-O grande salto deste projeto foi integrar múltiplos protocolos (I2C para tela, PWM para áudio e Digital IO para sensores) mantendo a estabilidade da FSM sem o uso do bloqueio do processador, elevando o projeto de um nível "Maker" para "Embedded Software Engineer".
+O grande salto deste projeto foi transformar um sistema de hardware local em uma aplicação de **Internet das Coisas (IoT)** real. Integrar múltiplos protocolos (I2C para tela, PWM para áudio e Digital IO para sensores) enquanto se mantém a estabilidade de requisições HTTPS na nuvem, sem bloquear o processador do microcontrolador, elevou o projeto de um nível "Maker" para "Embedded Software Engineer".
+
 ****
