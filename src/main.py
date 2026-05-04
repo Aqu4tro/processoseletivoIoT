@@ -3,12 +3,40 @@ import sys
 import json
 import network
 import ntptime
+import urequests
 from machine import Pin, PWM, SoftI2C
 import ssd1306
 
 # Feedback imediato para o CI
 print("Teste") 
 time.sleep(1) 
+
+# --- Configurações do Telegram (substitua pelos seus dados) ---
+BOT_TOKEN = "Seu Bot Token aqui"
+CHAT_ID = "Seu Chat ID aqui"
+
+def send_telegram(message):
+    try:
+        # Codifica a mensagem para formato de URL (espacos viram %20)
+        url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage?chat_id={CHAT_ID}&text={message}"
+        res = urequests.get(url)
+        res.close() # Importante fechar a conexão para liberar memória
+        print(f"Telegram enviado: {message}")
+    except Exception as e:
+        print(f"Erro ao enviar Telegram: {e}")
+
+def save_config(password, attempts, is_locked):
+    """Salva todo o estado atual no armazenamento interno"""
+    try:
+        with open(CONFIG_FILE, "w") as f:
+            json.dump({
+                "password": password,
+                "attempts": attempts,
+                "is_locked": is_locked
+            }, f)
+    except Exception as e:
+        print(f"Erro ao salvar config: {e}")
+
 
 # -------------------------------------------------------------
 # Internet e relógio (NTP)
@@ -35,6 +63,12 @@ def get_formatted_time():
     # O fuso do Brasil é UTC-3 (-10800 segundos)
     t = time.localtime(time.time() - 10800)
     return "{:02d}:{:02d}:{:02d}".format(t[3], t[4], t[5])
+
+def get_timestamp():
+    """Retorna data e hora formatadas para o Brasil (UTC-3)"""
+    t = time.localtime(time.time() - 10800)
+    # Formato: DD/MM/AAAA HH:MM:SS
+    return "{:02d}/{:02d}/{:04d} {:02d}:{:02d}:{:02d}".format(t[2], t[1], t[0], t[3], t[4], t[5])
 
 # -------------------------------------------------------------
 # Persistência (NVS - Non-Volatile Storage)
@@ -101,7 +135,7 @@ def read_keypad():
     return None
 
 # -------------------------------------------------------------
-# ESTADOS E LÓGICA DO COFRE
+# Estados do sistema e lógica principal
 # -------------------------------------------------------------
 STANDBY, IDLE, ENTERING = "STANDBY", "IDLE", "ENTERING"
 GRANTED, DENIED, ALARM = "GRANTED", "DENIED", "ALARM"
@@ -134,20 +168,30 @@ def beep(f=1000, d=50):
     except: pass
 
 def change_state(new_state):
-    global state, t_state, input_code
+    global state, t_state, input_code, attempts
     state = new_state
     t_state = time.ticks_ms()
-    try:
-        LED_GREEN.off(); LED_RED.off(); LED_YELLOW.off(); BUZZER.duty(0)
-    except: pass
+    LED_GREEN.off(); LED_RED.off(); LED_YELLOW.off(); BUZZER.duty(0)
     input_code = []
     
-    if new_state == STANDBY: update_oled("MODO ECONOMIA", get_formatted_time())
-    elif new_state == IDLE: update_oled("SISTEMA PRONTO", "DIGITE A SENHA")
-    elif new_state == AUTH_CHANGE: update_oled("SENHA ANTIGA:", "PARA LIBERAR")
-    elif new_state == SET_PWD: update_oled("MODO CONFIG", "NOVA SENHA:")
-    elif new_state == GRANTED: update_oled("ACESSO OK", "BEM-VINDO")
-    elif new_state == ALARM: update_oled("ALARME!", "COFRE BLOQUEADO")
+    if new_state == STANDBY: 
+        update_oled("MODO ECONOMIA", get_formatted_time())
+    elif new_state == IDLE: 
+        update_oled("SISTEMA PRONTO", "DIGITE A SENHA")
+    elif new_state == AUTH_CHANGE: 
+        update_oled("SENHA ANTIGA:", "PARA LIBERAR")
+    elif new_state == SET_PWD: 
+        # Aqui ela só limpa e prepara a tela!
+        update_oled("MODO CONFIG", "NOVA SENHA:")
+    elif new_state == GRANTED: 
+        update_oled("ACESSO OK", "BEM-VINDO")
+        attempts = 0
+        save_config(current_password, 0, False)
+        send_telegram(f"Cofre Aberto em: {get_timestamp()}")
+    elif new_state == ALARM: 
+        update_oled("ALARME!", "COFRE BLOQUEADO")
+        save_config(current_password, attempts, True)
+        send_telegram(f"ALERTA: Tentativa de invasão em: {get_timestamp()}")
 
 def run():
     global state, input_code, attempts, t_blink, blink_on, t_interaction
@@ -163,7 +207,7 @@ def run():
         try:
             now = time.ticks_ms()
             
-            # --- LEITURA DO TECLADO COM DEBOUNCE ---
+            # --- Leitura do Teclado ---
             current_key = read_keypad()
             btn_pressed = None
             
@@ -177,7 +221,7 @@ def run():
             else:
                 last_key = None # Tecla foi solta
 
-            # --- LÓGICA DE ESTADOS ---
+            # --- Lógica de Estados ---
             if state == STANDBY:
                 if time.ticks_diff(now, last_clock_update) > 1000:
                     update_oled("MODO ECONOMIA", f"Hora: {get_formatted_time()}")
@@ -235,14 +279,23 @@ def run():
             elif state == SET_PWD:
                 update_oled("NOVA SENHA:", "*" * len(input_code))
                 if btn_pressed:
-                    if btn_pressed == '#' or btn_pressed == '*': change_state(IDLE)
+                    if btn_pressed == '#' or btn_pressed == '*': 
+                        change_state(IDLE)
                     else:
                         input_code.append(btn_pressed)
                         if len(input_code) == 4:
                             current_password = list(input_code)
-                            save_password(current_password)
+                            
+                            # Salva usando a função nova 
+                            save_config(current_password, 0, False) 
+                            
                             update_oled("SUCESSO!", "SENHA SALVA")
-                            time.sleep(1); change_state(IDLE)
+                            
+                            # Envia a notificação para o telegram alvo
+                            send_telegram(f"Senha alterada com sucesso em: {get_timestamp()}")
+                            
+                            time.sleep(1)
+                            change_state(IDLE)
 
             elif state == GRANTED:
                 LED_GREEN.on()
