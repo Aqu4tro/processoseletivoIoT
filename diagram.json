@@ -34,13 +34,7 @@
     },
     { "type": "wokwi-pir-motion-sensor", "id": "pir", "top": -120.8, "left": -84.18, "attrs": {} },
     { "type": "wokwi-ssd1306", "id": "oled", "top": 217.9, "left": 462.7, "attrs": {} },
-    {
-      "type": "wokwi-membrane-keypad",
-      "id": "keypad",
-      "top": 360,
-      "left": 130,
-      "attrs": {}
-    }
+    { "type": "wokwi-membrane-keypad", "id": "keypad", "top": 362.8, "left": 197.6, "attrs": {} }
   ],
   "connections": [
     [ "esp:2", "led_green:A", "green", [] ],

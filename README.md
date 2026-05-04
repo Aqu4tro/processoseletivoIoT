@@ -159,8 +159,7 @@ Antes de dar "Play" na simulação, **caso queira testar com o Telegram**, você
    * O sistema pedirá a senha antiga (`1-3-2-4`).
    * Se acertar, ele pede a **NOVA SENHA**. Digite 4 botões de sua escolha. A nova senha será persistida na memória Flash e **o Telegram avisará:** *"Senha alterada com sucesso em: [Data e Hora]"*.
 5. **Testar o Alarme e Anti-Reboot:** Erre a senha de propósito 3 vezes consecutivas. O LED Vermelho piscará rapidamente, a sirene vai tocar e **o Telegram receberá um:** *"ALERTA: Tentativa de invasão!"*. 
-   * *Teste Especial:* Pare a simulação do Wokwi no meio do alarme e dê "Play" novamente. O cofre já vai ligar direto no modo de bloqueio apitando, provando que a memória Anti-Reboot funciona!
-
+   * *Teste Especial (Anti-Reboot):* Com o alarme tocando, vamos simular uma queda de energia abrupta. **Clique dentro da tela preta do terminal e aperte `Ctrl + C`** para interromper a execução. Não use o botão de Stop/Play do simulador, pois ele formata a memória virtual do Wokwi. Em seguida, ao lado das setinhas `>>>`, digite `import machine; machine.reset()` e aperte Enter para religar a placa. O cofre lerá a memória não-volátil (NVS) e ligará diretamente no modo de bloqueio apitando!
 ---
 
 

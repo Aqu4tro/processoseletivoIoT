@@ -250,7 +250,8 @@ def run():
     connect_wifi()
     sync_time()
 
-    change_state(STANDBY)
+    # Agora sim! Ele vai ligar no estado que estava salvo na memória
+    change_state(state)
 
     while True:
         try:
