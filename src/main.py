@@ -39,6 +39,9 @@ def connect_wifi():
         print(".", end="")
         time.sleep(0.5)
     print(f"\nConectado! IP: {wlan.ifconfig()[0]}")
+    
+    print("Aguardando estabilização da rede (DNS)...")
+    time.sleep(3)
 
 
 def sync_time():
